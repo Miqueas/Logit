@@ -15,8 +15,8 @@ local Fmt = {
     LogFile = "%s [%s %s] %s@%s: %s"
   },
   File = {
-    Name = "%s_%s",
-    Suffix = "%Y-%m-%d.log"
+    Name = "%s_%s.log",
+    Suffix = "%Y-%m-%d"
   },
   Time = "%H:%M:%S"
 }
