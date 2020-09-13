@@ -5,7 +5,6 @@
   Git Repository: https://github.com/M1que4s/Logger
 ]]
 
-local TC = require("TermColors")
 local Logger = {}
 local unp = table.unpack or unpack
 
@@ -72,7 +71,7 @@ function Logger:new(name, dir, console)
   assert(type(dir) == "string" or type(dir) == "nil", "Bad argument to #2 'new()', string expected, got " .. type(dir))
   assert(type(console) == "boolean" or type(console) == "nil", "Bad argument to #3 'new()', boolean expected, got " .. type(console))
 
-  local o = setmetatable({}, { __call = Logger.log, __index = Logger })
+  local o = setmetatable({}, { __call = Logger.log, __index = self })
   o.Namespace = name or "Logger"
   o.Console   = console
 
@@ -131,4 +130,4 @@ function Logger:log(exp, lvl, msg, ...)
   else return exp end
 end
 
-return Logger
+return setmetatable(Logger, { __call = Logger.new, __index = Logger})
