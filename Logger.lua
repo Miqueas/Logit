@@ -6,8 +6,7 @@
 ]]
 
 local TC = require("TermColors")
-local Class = require("Self")
-local Logger = Class("Logger")
+local Logger = {}
 local unp = table.unpack or unpack
 local Fmt = {
   Out = {
@@ -61,16 +60,19 @@ function Logger:new(name, dir, console)
   assert(type(dir) == "string" or type(dir) == "nil", "Bad argument to #2 'new()', string expected, got " .. type(dir))
   assert(type(console) == "boolean" or type(console) == "nil", "Bad argument to #3 'new()', boolean expected, got " .. type(console))
 
-  self.Namespace = name or "Logger"
-  self.Console   = console
+  local o = setmetatable({}, { __call = Logger.log, __index = Logger })
+  o.Namespace = name or "Logger"
+  o.Console   = console
 
-  if not dir or (dir and #dir == 0) then self.Path = "./"
-  elseif dir and DirExists(dir) then self.Path = DirNormalize(dir)
+  if not dir or (dir and #dir == 0) then o.Path = "./"
+  elseif dir and DirExists(dir) then o.Path = DirNormalize(dir)
   elseif dir and not DirExists(dir) then
     error("Path '" .. dir .. "' doesn't exists or you can't have persmissions to use it.")
   else -- idk...
     error("Something's wrong with '"..dir.."' (argument #2 in 'new()')")
   end
+
+  return o
 end
 
 function Logger:log(exp, lvl, msg, ...)
