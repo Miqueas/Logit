@@ -14,9 +14,7 @@ local function e(...)
   local va =  {...}
   str = str .. esc .. "["
   for i, v in ipairs(va) do str = str .. tostring(v) .. ";" end
-  str = str:gsub("%;$", "")
-  str = str .. "m"
-  return str
+  return str:gsub("%;$", "") .. "m"
 end
 
 local Fmt = {
@@ -31,29 +29,39 @@ local Fmt = {
   Time = "%H:%M:%S"
 }
 
-local function DirExists(path) local f = io.open(path); if f then f:close() return true else return false end end
+local function DirExists(path)
+  local f = io.open(path)
+  if f then
+    f:close()
+    return true
+  end
+end
+
 local function DirNormalize(str)
-  local str = str or ""
-  if os.getenv("HOME") then
-    -- POSIX
-    if not str:find("%/+", -1) then str = str .. "/" end
+  local str = tostring(str or "")
+  local os_check = os.getenv("HOME")
+
+  if _G.jit then os_check = not (_G.jit.os == "Windows") end
+
+  if os_check then
+    if not str:find("%/+", -1) then str = str .. "/" end -- POSIX
   else
-    -- Windows
-    if not str:find("%\\+", -1) then str = str .. "\\" end
+    if not str:find("%\\+", -1) then str = str .. "\\" end -- Windows
   end
 
   return str
 end
 
-Logger.Path      = ""
-Logger.Namespace = "Logger"
-Logger.Console   = false
+Logger.Path       = ""
+Logger.Namespace  = "Logger"
+Logger.Console    = false
+Logger.DefaultLvl = 1
 
 Logger.Type = {
   { Name = "TRACE", Color = "32" },
   { Name = "DEBUG", Color = "36" },
-  { Name = "INFO" , Color = "34" },
-  { Name = "WARN" , Color = "33" },
+  { Name = "INFO.", Color = "34" },
+  { Name = "WARN.", Color = "33" },
   { Name = "ERROR", Color = "31" },
   { Name = "FATAL", Color = "35" },
   { Name = "OTHER", Color = "30" }
@@ -61,9 +69,15 @@ Logger.Type = {
 
 local function StrToLogLevel(str)
   if type(str) == "string" then
-    for i, v in ipairs(Logger.Type) do if str:upper() == v.Name then return i end end
+    for i, v in ipairs(Logger.Type) do 
+      if (str:upper() == v.Name) or (str:upper() == v.Name:sub(1, #v.Name-1)) then 
+        return i 
+      end
+    end
     return 7
-  else return str end
+  else 
+    return str 
+  end
 end
 
 function Logger:new(name, dir, console)
@@ -75,27 +89,35 @@ function Logger:new(name, dir, console)
   o.Namespace = name or "Logger"
   o.Console   = console
 
-  if not dir or (dir and #dir == 0) then o.Path = "./"
+  if not dir or  #dir == 0 then o.Path = "./"
   elseif dir and DirExists(dir) then o.Path = DirNormalize(dir)
   elseif dir and not DirExists(dir) then
-    error("Path '" .. dir .. "' doesn't exists or you can't have persmissions to use it.")
+    error("Path '" .. dir .. "' doesn't exists or you can't have permissions to use it.")
   else -- idk...
-    error("Something's wrong with '"..dir.."' (argument #2 in 'new()')")
+    error("Something's wrong with '"..dir.."'... (argument #2 in 'new()')")
   end
 
   return o
 end
 
-function Logger:log(exp, lvl, msg, ...)
-  assert(type(lvl) == "number" or type(lvl) == "string", "Bad argument #2 to 'log()', number or string expected, got " .. type(lvl))
-  assert(type(msg) == "string", "")
+function Logger:setDefaultLvl(lvl)
+  self.DefaultLvl = StrToLogLevel(lvl or 7)
+end
+
+function Logger:log(msg, exp, lvl, ...)
+  assert(type(lvl) == "number" or type(lvl) == "string" or type(lvl) == "nil",
+  "Bad argument #2 to 'log()', Level number or string expected, got " .. type(lvl))
+
+  assert(not (type(msg) == "nil"), "Message expected, got nil!")
+
+  local lvl = (lvl or self.DefaultLvl)
+  local msg = tostring(msg)
 
   local va = {...}
   local lvl = StrToLogLevel(lvl)
   local info = debug.getinfo(2, "Sl")
   local file = io.open(self.Path .. Fmt.File.Name:format(self.Namespace, os.date(Fmt.File.Suffix)), "a+")
-  local time = os.date(Fmt.Time) -- Set's the time for both logs (file and console)
-  if not (lvl >= 1 and lvl <= 7) then error("Log level out of range") end
+  local time = os.date(Fmt.Time)
 
   if not (exp) then
     local fout = Fmt.Out.LogFile:format(
@@ -126,7 +148,12 @@ function Logger:log(exp, lvl, msg, ...)
       print(cout)
     end
 
-    if lvl >= 5 and lvl <= 7 then os.exit(1) else return exp end
+    if lvl >= 5 and lvl <= 7 then 
+      if _G.love then
+        _G.love.event.quit()
+      end
+      os.exit(1) 
+    else return exp end
   else return exp end
 end
 
