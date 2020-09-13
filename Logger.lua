@@ -8,9 +8,21 @@
 local TC = require("TermColors")
 local Logger = {}
 local unp = table.unpack or unpack
+
+local function e(...)
+  local str = ""
+  local esc = string.char(27)
+  local va =  {...}
+  str = str .. esc .. "["
+  for i, v in ipairs(va) do str = str .. tostring(v) .. ";" end
+  str = str:gsub("%;$", "")
+  str = str .. "m"
+  return str
+end
+
 local Fmt = {
   Out = {
-    Console = "#{Dim}%s [#{None;Bold}%s #{%s}%s#{None;Dim}] %s@%s:#{None} %s",
+    Console = e(2).."%s ["..e(0,1).."%s %s%s"..e(0,2).."] %s@%s:"..e(0).." %s",
     LogFile = "%s [%s %s] %s@%s: %s"
   },
   File = {
@@ -39,13 +51,13 @@ Logger.Namespace = "Logger"
 Logger.Console   = false
 
 Logger.Type = {
-  { Name = "TRACE", Color = "Green"   },
-  { Name = "DEBUG", Color = "Cyan"    },
-  { Name = "INFO" , Color = "Blue"    },
-  { Name = "WARN" , Color = "Yellow"  },
-  { Name = "ERROR", Color = "Red"     },
-  { Name = "FATAL", Color = "Magenta" },
-  { Name = "OTHER", Color = "Black"   }
+  { Name = "TRACE", Color = "32" },
+  { Name = "DEBUG", Color = "36" },
+  { Name = "INFO" , Color = "34" },
+  { Name = "WARN" , Color = "33" },
+  { Name = "ERROR", Color = "31" },
+  { Name = "FATAL", Color = "35" },
+  { Name = "OTHER", Color = "30" }
 }
 
 local function StrToLogLevel(str)
@@ -95,7 +107,6 @@ function Logger:log(exp, lvl, msg, ...)
       info.currentline,
       msg
         :format(unp(va))
-        :gsub("(%#%{(.-)%})", "") -- Removes TermColors markup
         :gsub("(" .. string.char(27) .. "%[(.-)m)", "") -- Removes ANSI color escape codes
     )
 
@@ -107,13 +118,13 @@ function Logger:log(exp, lvl, msg, ...)
       local cout = Fmt.Out.Console:format(
         time,
         self.Namespace,
-        ("FG(%s)"):format(self.Type[lvl].Color),
+        e(self.Type[lvl].Color),
         self.Type[lvl].Name,
         info.short_src,
         info.currentline,
         msg:format(unp(va))
       )
-      print(TC:compile(cout))
+      print(cout)
     end
 
     if lvl >= 5 and lvl <= 7 then os.exit(1) else return exp end
