@@ -4,7 +4,7 @@ Logger es una pequeña librería utilitaria para registros en Lua que puedes de 
 
 ```lua
 local Logger = require("Logger")
-local log = Logger:new("MyScript", os.getenv("HOME"), true)
+local log = Logger("MyScript", os.getenv("HOME"), true)
 
 -- algo de código aquí...
 
@@ -28,7 +28,7 @@ Y un fichero en tu carpeta `$HOME` llamado `MyScript_DATE.log` (donde `DATE` es 
 
 Logger provee solamente 2 funciones/métodos:
 
-  * `new([name, dir, console])`: Constructor. Esta función es principalmente para un uso más cómodo y básicamente prepara algunos elementos para ser usados por la función `log()`. Argumentos:
+  * `new([name, dir, console])`: Constructor. Igual que `Logger()`. Esta función es principalmente para un uso más cómodo y básicamente prepara algunos elementos para ser usados por la función `log()`. Argumentos:
     * (__string__) `name` El nombre de tu aplicación/proyecto/script, entre otros. Básicamente un nombre con el que puedas identificar algo en particular, es útil si piensas usar varias instancias de Logger.
     * (__string__) `dir` Un directorio existente donde Logger guardará los ficheros de registro. Si no existe, tendrás un error.
     * (__boolean__) `console` Por defecto, Logger solo escribe ficheros de registro, pero si este argumento es `true`, entonces también escribirá registros en la terminal/consola.

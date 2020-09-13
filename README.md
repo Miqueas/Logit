@@ -7,7 +7,7 @@ Logger is very simple, here goes an example:
 
 ```lua
 local Logger = require("Logger")
-local log = Logger:new("MyScript", os.getenv("HOME"), true)
+local log = Logger("MyScript", os.getenv("HOME"), true)
 
 -- BLABLABLA CODE CODE CODE
 
@@ -31,7 +31,7 @@ And a file in your `$HOME` named `MyScript_DATE.log` (where `DATE` is the curren
 
 Logger only provides 2 functions/methods:
 
-  * `new([name, dir, console])`: Constructor. This function is only for a more comfortable use and the purpose is to basically just prepare a few elements for the `log()` function.
+  * `new([name, dir, console])`: Constructor. Same as `Logger()`. This function is only for a more comfortable use and the purpose is to basically just prepare a few elements for the `log()` function.
     Arguments:
     * (__string__) `name` The name of your app/script/project/etc. Basically a namespace, useful if you want to use various Logger instances.
     * (__string__) `dir` An existing directory where Logger saves log files. If `dir` doesn't exists, it will throw an error.
