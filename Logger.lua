@@ -21,7 +21,6 @@ local Fmt = {
   Time = "%H:%M:%S"
 }
 
-local function StrLen(s) local n = 0; for c in s:gmatch(".") do n = n + 1 end; return n end
 local function DirExists(path) local f = io.open(path); if f then f:close() return true else return false end end
 local function DirNormalize(str)
   local str = str or ""
@@ -65,7 +64,7 @@ function Logger:new(name, dir, console)
   self.Namespace = name or "Logger"
   self.Console   = console
 
-  if not dir or (dir and StrLen(dir) == 0) then self.Path = "./"
+  if not dir or (dir and #dir == 0) then self.Path = "./"
   elseif dir and DirExists(dir) then self.Path = DirNormalize(dir)
   elseif dir and not DirExists(dir) then
     error("Path '" .. dir .. "' doesn't exists or you can't have persmissions to use it.")
