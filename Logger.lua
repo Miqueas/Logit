@@ -114,7 +114,7 @@ function Logger:log(msg, exp, lvl, ...)
   local file = io.open(self.Path .. Fmt.File.Name:format(self.Namespace, os.date(Fmt.File.Suffix)), "a+")
   local time = os.date(Fmt.Time)
 
-  if (exp == false) or lvl < 5 then
+  if ((exp == false) and lvl > 4) or lvl < 5 then
     local fout = Fmt.Out.LogFile:format(
       time,
       self.Namespace,
