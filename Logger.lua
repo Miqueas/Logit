@@ -72,11 +72,17 @@ local function StrToLogLevel(str)
 end
 
 function Logger:new(name, dir, console)
-  assert(type(name) == "string" or type(name) == "nil", "Bad argument to #1 'new()', string expected, got " .. type(name))
-  assert(type(dir) == "string" or type(dir) == "nil", "Bad argument to #2 'new()', string expected, got " .. type(dir))
-  assert(type(console) == "boolean" or type(console) == "nil", "Bad argument to #3 'new()', boolean expected, got " .. type(console))
+  assert(type(name) == "string" or type(name) == "nil", 
+    "Bad argument to #1 'new()', string expected, got " .. type(name))
+  
+  assert(type(dir) == "string" or type(dir) == "nil", 
+    "Bad argument to #2 'new()', string expected, got " .. type(dir))
+  
+  assert(type(console) == "boolean" or type(console) == 
+    "nil", "Bad argument to #3 'new()', boolean expected, got " .. type(console))
 
   local o = setmetatable({}, { __call = Logger.log, __index = self })
+  
   o.Namespace = name or "Logger"
   o.Console   = console
 
@@ -142,10 +148,8 @@ function Logger:log(msg, exp, lvl, ...)
       print(cout)
     end
 
-    if lvl >= 5 and lvl <= 7 then 
-      if _G.love then
-        _G.love.event.quit()
-      end
+    if lvl > 5 then 
+      if love then love.event.quit() end
       os.exit(1) 
     else return exp end
   else return exp end
