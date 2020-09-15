@@ -160,7 +160,7 @@ function Logger:log(msg, lvl, ...)
 end
 
 function Logger:expect(exp, msg, lvl, ...)
-  if not exp then self:log(msg, lvl or 7, ...)
+  if not exp then self:log(msg, lvl or 6, ...)
   else return exp end
 end
 
