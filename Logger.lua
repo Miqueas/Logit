@@ -1,5 +1,6 @@
 --[[
-  Author: Miqueas Martinez (miqueas2020@yahoo.com)
+  Author: Miqueas Martinez (https://github.com/M1que4s)
+  Co-Author: Nelson "darltrash" López (https://github.com/darltrash)
   Date: 2020/09/12
   License: MIT (see it in the repository)
   Git Repository: https://github.com/M1que4s/Logger
