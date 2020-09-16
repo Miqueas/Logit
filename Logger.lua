@@ -161,7 +161,7 @@ end
 
 function Logger:expect(exp, msg, lvl, ...)
   -- 'expect()' is mainly for errors
-  if not exp then self:log(msg, IsLogLevel(lvl) or 5, ...)
+  if not exp then self:log(msg, IsLogLevel(lvl) or "error", ...)
   else return exp end
 end
 
@@ -172,7 +172,7 @@ function Logger:header(msg, ...)
     local time = os.date(Fmt.Time)
     local file = io.open(self.Path..Fmt.FName:format(self.Namespace, os.date(self.FileSuffix)), "a+")
     local fout = self.Header:format(time, msg):gsub(esc.."%[(.-)m", "")
-    file:write(fout.."\n")
+    file:write(fout)
     file:close()
 
     if self.Console then print(self.Header:format(time, msg)) end
