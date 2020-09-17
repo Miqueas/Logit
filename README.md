@@ -37,8 +37,8 @@ And a file in your `$HOME` folder called `MyScript_DATE.log` (where `DATE` is th
 
 Logger provides 6 functions/methods:
 
-   - `new([name, dir, console, suffix, header, ...])`: Constructor. Same as `Logger()`. This function is made for those who like to do it the :new() way and basically prepares some elements to be used by the `log()` function. 
-    - (__string [optional]__) `name` The name of your application/project/script/etc. Basically a name that you can identify with something in particular, is useful if you plan to use several instances of Logger on a single proyect.
+  - `new([name, dir, console, suffix, header, ...])`: Constructor. Same as `Logger()`. This function is made for those who like to do it the :new() way and basically prepares some elements to be used by the `log()` function.
+    - (__string [optional]__) `name` The name of your application/project/script/etc. Basically a name that you can identify with something in particular, is useful if you plan to use several instances of Logger on a single project.
     - (__string [optional]__) `dir` An existing directory where Logger will store the log files. If it does not exist, Logger will crash.
     - (__boolean [optional]__) `console` By default, Logger only writes log files, but if this argument is `true`, then it will also write logs to the terminal/console.
     - (__string [optional]__) `suffix` You can change the default file suffix, which is: 'Year-Month-Day' in numbers. This argument _NEEDS_ to be a string with a format accepted by `os.date()`.
