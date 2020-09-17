@@ -69,12 +69,13 @@ Logger provee 6 funciones/métodos:
 
 La función `log()` y `expect()` aceptan los siguientes valores en el argumento `lvl` (refiriéndose al "nivel de importancia"):
 
-  * `"other"`
-  * `"trace"`
-  * `"debug"`
-  * `"info"`
-  * `"warn"`
-  * `"error"`
-  * `"fatal"`
+  * `"other"` Cualquier cosa que no tiene una importancia relevante
+  * `"trace"` Rastros internos de "algo" en el programa
+  * `"debug"` Información para depurar (usado mayormente por desarrolladores)
+  * `"info"`  Información que pueda ser útil para diferentes cosas
+  * `"warn"`  Probablemente las cosas no van como deberían
+  * `"error"` Hubo un problema
+  * `"fatal"` Algo terriblemente malo sucedió
 
-Estos valores siguen un nivel de 0 (`"other"`) al 6 (`"fatal"`). Un valor mayor a 4 (`"warn"`) causa que Logger detenga la ejecución de Lua.
+Estos valores siguen un nivel de 0 (`"other"`) al 6 (`"fatal"`).
+Un valor mayor a 4 (`"warn"`) causa que Logger detenga la ejecución de Lua.
