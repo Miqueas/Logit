@@ -26,23 +26,18 @@ local Fmt = {
 
 local function DirExists(path)
   local f = io.open(path)
-  if f then
-    f:close()
-    return true
-  end
+  return (f and f:close()) and true or false
 end
 
 -- Appends a / or a \ (depending on the OS's directory system) at the end of a path string
 local function DirNormalize(str)
   local str = tostring(str or "")
-  local posix = os.getenv("HOME")
-
-  if jit then posix = not (jit.os == "Windows") end -- More effective in LuaJIT
+  local posix = (jit) and not (jit.os == "Windows") or os.getenv("HOME")
 
   if posix then
-    if not str:find("%/+", -1) then str = str .. "/" end -- POSIX
+    str = (not str:find("%/+", -1)) and str.."/" or str -- POSIX
   else
-    if not str:find("%\\+", -1) then str = str .. "\\" end -- Windows
+    str = (not str:find("%\\+", -1)) and str.."\\" or str -- Windows
   end
 
   return str
