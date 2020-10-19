@@ -37,7 +37,7 @@ local function DirNormalize(str)
   if posix then
     str = (not str:find("%/+", -1)) and str.."/" or str -- POSIX
   else
-    str = (not str:find("%\\+", -1)) and str.."\\" or str -- Windows
+    str = (not str:find("%\\+", -1)) and str:gsub("/", "\\") .. "\\" or str:gsub("/", "\\") -- Windows
   end
 
   return str
