@@ -1,7 +1,7 @@
 # Logger
 
-Logger es una pequeña librería utilitaria para registros en Lua que puedes integrar facilmente en tus proyectos.
-Aquí un pequeño ejemplo:
+Una pequeña y versátil librería para crear ficheros de registros con Lua que puedes integrar facilmente en tus proyectos.
+Tan fácil como:
 
 ```lua
 local Logger = require("Logger")
@@ -18,7 +18,7 @@ log:expect(type(config) == "table", "la configuración de usuario no pudo ser ca
 -- Más código aquí...
 ```
 
-Tendrás una salida como esta:
+Y tendrás una salida como esta:
 
 ![Capture 1](capture_es.png)
 
@@ -35,7 +35,32 @@ Y un fichero en tu carpeta `$HOME` llamado `MyScript_DATE.log` (donde `DATE` es 
 
 ### Documentación
 
-Logger provee 6 funciones/métodos:
+Logger es una librería "Orientada a Objetos" y cuando es cargada con `require()`, retorna el objeto/clase "Logger". Esto es así porque quizás quieras tener varias instancias de Logger, pero usarlas para diferentes tipos de registros. Si no es así como deseas trabajar con Logger, no hay problema, puedes cagar Logger una vez y usarlo como quieras:
+
+```lua
+local log = require("Logger")("Script", nil, true)
+log("Esto es un mensaje de información", "info")
+```
+
+Con eso, ya tienes una instancia de Logger disponible para usar.
+
+#### Propiedades
+
+Evidentemente, todas estas propiedades pueden ser modificadas (ya que Lua no es un lenguaje orientado a objetos), sin embargo, recomiendo seguir los flags de acceso y los tipos de datos indicados para asegurar el comportamiento correcto de Logger.
+
+ * \[ _READ_ / _WRITE_ \] (__string__) `Path` La ruta en donde se guardan los registros (vease el método `new()`)
+ * \[ _READ_ / _WRITE_ \] (__string__) `Namespace` El espacio de nombres que se muestra en la consola (vease el método `new()`)
+ * \[ _READ_ / _WRITE_ \] (__boolean__) `Console` Habilita o deshabilita la impresión en consola (vease el método `new()`)
+ * \[ _READ_ / _WRITE_ \] (__string__) `LogLvl` El nivel de registro por defecto (vease el método `setLogLvl()`)
+ * \[ _READ_ \] (__string__) `Header` Plantilla de encabezado (vease el método `new()` y `header()`)
+ * \[ _READ_ / _WRITE_ \] (__string__) `FileSuffix` Sufijo usado en el nombre de fichero de registro (vease el método `setFileSuffix()`).
+ * \[ _READ_ \] (__table__) `Type` Contiene información sobre los tipos de logs, usado solo internamente.
+
+READ: Lectura. Recomiendo no modificar
+
+READ/WRITE: Lectura y escritura. Puede modificarse libremente, pero conservando el tipo de dato
+
+#### Métodos
 
   * `new([name, dir, console, suffix, header, ...])`: Constructor. Igual que `Logger()`. Esta función es principalmente para un uso más cómodo de la librería y básicamente prepara algunos elementos para ser usados por la función `log()`. Argumentos (opcionales):
     * (__string__) `name` El nombre de tu aplicación/proyecto/script, entre otros. Básicamente un nombre con el que puedas identificar algo en particular, es útil si piensas usar varias instancias de Logger.
