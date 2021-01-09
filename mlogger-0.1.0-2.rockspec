@@ -1,6 +1,6 @@
 package = "MLogger"
 -- SemVer: 0.1.0
--- Revisión: 1
+-- Revisión: 2
 version = "0.1.0-2"
 source = {
   url = "git://github.com/M1que4s/Logger",
