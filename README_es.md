@@ -33,6 +33,14 @@ Y un fichero en tu carpeta `$HOME` llamado `MyScript_DATE.log` (donde `DATE` es 
 11:43:55 [SOMETHING WENT WRONG!]
 ```
 
+### Instalación
+
+Puedes obtener Logger por medio de LuaRocks de la siguiente forma:
+
+```
+[sudo] luarocks install MLogger
+```
+
 ### Documentación
 
 Logger es una librería "Orientada a Objetos" y cuando es cargada con `require()`, retorna el objeto/clase "Logger". Esto es así porque quizás quieras tener varias instancias de Logger, pero usarlas para diferentes tipos de registros. Si no es así como deseas trabajar con Logger, no hay problema, puedes cagar Logger una vez y usarlo como quieras:
