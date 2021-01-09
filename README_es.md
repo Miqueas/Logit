@@ -104,3 +104,7 @@ La función `log()` y `expect()` aceptan los siguientes valores en el argumento 
 
 Estos valores siguen un nivel de 0 (`"other"`) al 6 (`"fatal"`).
 Un valor mayor a 4 (`"warn"`) causa que Logger detenga la ejecución de Lua.
+
+---
+
+Logger sigue la especificación de [SemVer](https://semver.org/)
