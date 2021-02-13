@@ -1,3 +1,5 @@
+[![License][LicenseBadge]][licenseURL]
+
 ¡Lee la versión en español [aquí](README_es.md)!
 
 # Logger
@@ -80,3 +82,6 @@ The function `log()` and `expect()` accept the following values in the `lvl` arg
 
 These values follow a level from 0 (`"other"`) to 6 (`"fatal"`).
 A value higher than 4 (`"warn"`) causes Logger to stop the execution of Lua.
+
+[LicenseBadge]: https://img.shields.io/badge/License-Zlib-brightgreen?style=for-the-badge
+[LicenseURL]: https://opensource.org/licenses/Zlib
