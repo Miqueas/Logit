@@ -1,3 +1,5 @@
+[![License][LicenseBadge]][licenseURL]
+
 # Logger
 
 Una pequeña y versátil librería para crear ficheros de registros con Lua que puedes integrar facilmente en tus proyectos.
@@ -116,3 +118,6 @@ Un valor mayor a 4 (`"warn"`) causa que Logger detenga la ejecución de Lua.
 ---
 
 Logger sigue la especificación de [SemVer](https://semver.org/)
+
+[LicenseBadge]: https://img.shields.io/badge/Licencia-Zlib-brightgreen?style=for-the-badge
+[LicenseURL]: https://opensource.org/licenses/Zlib
