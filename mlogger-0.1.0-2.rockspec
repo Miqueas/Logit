@@ -1,16 +1,16 @@
-package = "MLogger"
--- SemVer: 0.1.0
--- Revisión: 2
-version = "0.1.0-2"
+package = "Logit"
+-- SemVer: 1.0.0
+-- Revisión: 0
+version = "1.0.0-0"
 source = {
-  url = "git://github.com/M1que4s/Logger",
-  tag = "v0.1.0"
+  url = "git://github.com/Miqueas/Logger",
+  tag = "v1.0.0"
 }
 
 description = {
   summary = "Logging made easy!",
   detailed = "A small and versatile library to create log files with Lua that you can easily integrate into your projects.",
-  homepage = "https://github.com/M1que4s/Logger",
+  homepage = "https://github.com/Miqueas/Logger",
   license = "MIT"
 }
 
@@ -21,6 +21,6 @@ dependencies = {
 build = {
   type = "builtin",
   modules = {
-    Logger = "Logger.lua"
+    Logit = "Logit.lua"
   }
 }

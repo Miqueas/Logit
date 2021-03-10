@@ -1,12 +1,12 @@
 --[[
-  Author: Miqueas Martinez (https://github.com/M1que4s)
+  Author: Miqueas Martinez (https://github.com/Miqueas)
   Co-Author: Nelson "darltrash" López (https://github.com/darltrash)
   Date: 2020/09/12
   License: MIT (see it in the repository)
-  Git Repository: https://github.com/M1que4s/Logger
+  Git Repository: https://github.com/Miqueas/Logit
 ]]
 
-local Logger = {}
+local Logit = {}
 local unp = table.unpack or unpack
 local esc = string.char(27) -- 0x1b: see the Wikipedia link below
 
@@ -52,16 +52,16 @@ local function DirNormalize(str)
 end
 
 -- Path where log files are saved
-Logger.Path       = "./"
-Logger.Namespace  = "Logger"
--- By default, Logger don't write logs to the terminal
-Logger.Console    = false
+Logit.Path       = "./"
+Logit.Namespace  = "Logit"
+-- By default, Logit don't write logs to the terminal
+Logit.Console    = false
 -- The default log level
-Logger.LogLvl     = 2
-Logger.Header     = "\n"..e(2).."%s ["..e(0,1).."%s"..e(0,2).."]"..e(0).."\n"
-Logger.FileSuffix = "%Y-%m-%d"
+Logit.LogLvl     = 2
+Logit.Header     = "\n"..e(2).."%s ["..e(0,1).."%s"..e(0,2).."]"..e(0).."\n"
+Logit.FileSuffix = "%Y-%m-%d"
 
-Logger.Type = {
+Logit.Type = {
   [0] = { Name = "OTHER", Color = "30" },
   [1] = { Name = "TRACE", Color = "32" },
   [2] = { Name = "DEBUG", Color = "36" },
@@ -73,8 +73,8 @@ Logger.Type = {
 
 local function IsLogLevel(str)
   if type(str) == "string" then
-    for i = 0, #Logger.Type do
-      if str:upper() == Logger.Type[i].Name:gsub("%.", "") then
+    for i = 0, #Logit.Type do
+      if str:upper() == Logit.Type[i].Name:gsub("%.", "") then
         return i
       end
     end
@@ -82,7 +82,7 @@ local function IsLogLevel(str)
   else return false end
 end
 
-function Logger:new(name, dir, console, suffix, header, ...)
+function Logit:new(name, dir, console, suffix, header, ...)
   local err = "Bad argument #%s to 'new()', '%s' expected, got %s"
 
   -- Arguments type check
@@ -151,11 +151,11 @@ function Logger:new(name, dir, console, suffix, header, ...)
   file:write(fout)
   file:close()
 
-  -- Header is written, so... Returns the new Logger instance!
+  -- Header is written, so... Returns the new Logit instance!
   return o
 end
 
-function Logger:log(msg, lvl, ...)
+function Logit:log(msg, lvl, ...)
   -- 'lvl' is optional and if isn't a log level ("error", "warn", etc...),
   -- assumes that is part of '...'
   local lvl = IsLogLevel(lvl) or self.LogLvl
@@ -163,10 +163,10 @@ function Logger:log(msg, lvl, ...)
   -- 'log()' assumes that 'msg' is an string
   local msg = tostring(msg)
 
-  -- This prevents that 'Logger.lua' appears in the log message when 'expect()' is called.
+  -- This prevents that 'Logit.lua' appears in the log message when 'expect()' is called.
   -- Basically it's like the ternary operator in C:
   --    (exp) ? TRUE : FALSE
-  local info = (debug.getinfo(2, "Sl").short_src:find("(Logger.lua)"))
+  local info = (debug.getinfo(2, "Sl").short_src:find("(Logit.lua)"))
     and debug.getinfo(3, "Sl")
      or debug.getinfo(2, "Sl")
 
@@ -221,14 +221,14 @@ function Logger:log(msg, lvl, ...)
   end
 end
 
-function Logger:expect(exp, msg, lvl, ...)
+function Logit:expect(exp, msg, lvl, ...)
   -- 'expect()' is mainly for errors
   if not exp then self:log(msg, IsLogLevel(lvl) or "error", ...)
   else return exp end
 end
 
 -- Write a log "header". May util if you want to separate some logs or create "breakpoints", etc...
-function Logger:header(msg, ...)
+function Logit:header(msg, ...)
   if type(msg) == "string" and #msg > 0 then
     local msg = msg:format(...)
     local time = os.date(Fmt.Time)
@@ -253,13 +253,13 @@ function Logger:header(msg, ...)
   end
 end
 
-function Logger:setLogLvl(lvl)
-  -- Now, Logger only take strings for log levels
+function Logit:setLogLvl(lvl)
+  -- Now, Logit only take strings for log levels
   local lvl   = (type(lvl) == "string") and lvl
   self.LogLvl = IsLogLevel(lvl) or 2
 end
 
-function Logger:setFileSuffix(str)
+function Logit:setFileSuffix(str)
   local str = (type(str) == "string" and #str > 0)
     and str
      or "%Y-%m-%d"
@@ -267,4 +267,4 @@ function Logger:setFileSuffix(str)
   self.FileSuffix = str
 end
 
-return setmetatable(Logger, { __call = Logger.new, __index = Logger })
+return setmetatable(Logit, { __call = Logit.new, __index = Logit })
