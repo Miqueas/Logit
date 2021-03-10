@@ -2,9 +2,9 @@
 
 ¡Lee la versión en español [aquí](README_es.md)!
 
-# Logger
+# Logit
 
-Logger is a small utility library for Lua logs that you can easily integrate into your projects.
+An small utility library for Lua logs that you can easily integrate into your projects.
 Here a small example:
 
 ```lua
@@ -35,6 +35,14 @@ And a file in your `$HOME` folder called `MyScript_DATE.log` (where `DATE` is th
 11:43:55 [MyScript ERROR] Test.lua@10: user config can't be loaded
 
 11:43:55 [SOMETHING WENT WRONG!]
+```
+
+### Installation
+
+Just use Luarocks:
+
+```
+[sudo] luarocks install Logit
 ```
 
 ### Documentation:

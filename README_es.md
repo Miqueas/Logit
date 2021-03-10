@@ -1,6 +1,6 @@
 [![License][LicenseBadge]][licenseURL]
 
-# Logger
+# Logit
 
 Una pequeña y versátil librería para crear ficheros de registros con Lua que puedes integrar facilmente en tus proyectos.
 Tan fácil como:
@@ -40,7 +40,7 @@ Y un fichero en tu carpeta `$HOME` llamado `MyScript_DATE.log` (donde `DATE` es 
 Puedes obtener Logger por medio de LuaRocks de la siguiente forma:
 
 ```
-[sudo] luarocks install MLogger
+[sudo] luarocks install Logit
 ```
 
 ### Documentación
