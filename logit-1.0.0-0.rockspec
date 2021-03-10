@@ -11,7 +11,7 @@ description = {
   summary = "Logging made easy!",
   detailed = "A small and versatile library to create log files with Lua that you can easily integrate into your projects.",
   homepage = "https://github.com/Miqueas/Logger",
-  license = "MIT"
+  license = "zlib"
 }
 
 dependencies = {
