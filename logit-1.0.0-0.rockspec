@@ -3,7 +3,7 @@ package = "Logit"
 -- Revisión: 0
 version = "1.0.0-0"
 source  = {
-  url = "git://github.com/Miqueas/Logger",
+  url = "git://github.com/Miqueas/Logit",
   tag = "v1.0.0"
 }
 
