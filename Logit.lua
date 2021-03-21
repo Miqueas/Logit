@@ -51,17 +51,12 @@ local function DirNormalize(str)
   return str
 end
 
--- Path where log files are saved
-Logit.Path       = "./"
-Logit.Namespace  = "Logit"
--- By default, Logit don't write logs to the terminal
-Logit.Console    = false
 -- The default log level
-Logit.LogLvl     = 2
-Logit.Header     = "\n"..e(2).."%s ["..e(0,1).."%s"..e(0,2).."]"..e(0).."\n"
-Logit.FileSuffix = "%Y-%m-%d"
+local LogLvl = 2
+-- Header template
+local LogHeader = "\n"..e(2).."%s ["..e(0,1).."%s"..e(0,2).."]"..e(0).."\n"
 
-Logit.Type = {
+local LogType = {
   [0] = { Name = "OTHER", Color = "30" },
   [1] = { Name = "TRACE", Color = "32" },
   [2] = { Name = "DEBUG", Color = "36" },
@@ -71,10 +66,17 @@ Logit.Type = {
   [6] = { Name = "FATAL", Color = "35" }
 }
 
+-- Path where log files are saved
+Logit.Path       = "./"
+Logit.Namespace  = "Logit"
+-- By default, Logit don't write logs to the terminal
+Logit.Console    = false
+Logit.FileSuffix = "%Y-%m-%d"
+
 local function IsLogLevel(str)
   if type(str) == "string" then
-    for i = 0, #Logit.Type do
-      if str:upper() == Logit.Type[i].Name:gsub("%.", "") then
+    for i = 0, #LogType do
+      if str:upper() == LogType[i].Name:gsub("%.", "") then
         return i
       end
     end
@@ -147,7 +149,7 @@ function Logit:new(name, dir, console, suffix, header, ...)
   )
 
   -- The gsub at the end removes color escape-codes
-  local fout = o.Header:format(time, header):gsub(esc.."%[(.-)m", "")
+  local fout = LogHeader:format(time, header):gsub(esc.."%[(.-)m", "")
   file:write(fout)
   file:close()
 
@@ -158,7 +160,7 @@ end
 function Logit:log(msg, lvl, ...)
   -- 'lvl' is optional and if isn't a log level ("error", "warn", etc...),
   -- assumes that is part of '...'
-  local lvl = IsLogLevel(lvl) or self.LogLvl
+  local lvl = IsLogLevel(lvl) or LogLvl
   local va  = IsLogLevel(lvl) and {...} or { lvl, ... }
   -- 'log()' assumes that 'msg' is an string
   local msg = tostring(msg)
@@ -185,7 +187,7 @@ function Logit:log(msg, lvl, ...)
     time,
     self.Namespace,
     -- Name of the type of log
-    self.Type[lvl].Name,
+    LogType[lvl].Name,
     -- Source file from 'log()' is called
     info.short_src, -- Line where is called
     info.currentline,
@@ -203,8 +205,8 @@ function Logit:log(msg, lvl, ...)
       time,
       self.Namespace,
       -- Uses the correct color for differents logs
-      e(self.Type[lvl].Color),
-      self.Type[lvl].Name,
+      e(LogType[lvl].Color),
+      LogType[lvl].Name,
       info.short_src,
       info.currentline,
       -- Here we don't remove ANSI codes because we want a colored output
@@ -216,7 +218,9 @@ function Logit:log(msg, lvl, ...)
   if lvl > 4 then
     -- A log level major to 4 causes the program to stop
     self:header(e(31).."SOMETHING WENT WRONG!")
-    if love then love.event.quit() end -- For Love2D compatibility
+
+    -- For Love2D compatibility
+    if love then love.event.quit() end
     os.exit(1)
   end
 end
@@ -241,22 +245,20 @@ function Logit:header(msg, ...)
     )
 
     -- The gsub at the end removes color escape-codes
-    local fout = self.Header:format(time, msg):gsub(esc.."%[(.-)m", "")
+    local fout = LogHeader:format(time, msg):gsub(esc.."%[(.-)m", "")
     file:write(fout)
     file:close()
 
     if self.Console then
-      print(self.Header:format(time, msg))
+      print(LogHeader:format(time, msg))
     end
-  else
-    return
   end
 end
 
 function Logit:setLogLvl(lvl)
   -- Now, Logit only take strings for log levels
-  local lvl   = (type(lvl) == "string") and lvl
-  self.LogLvl = IsLogLevel(lvl) or 2
+  local lvl = (type(lvl) == "string") and lvl
+  LogLvl    = IsLogLevel(lvl) or 2
 end
 
 function Logit:setFileSuffix(str)
