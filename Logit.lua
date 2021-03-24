@@ -6,26 +6,15 @@
   Git Repository: https://github.com/Miqueas/Logit
 ]]
 
-local Logit = {}
-local unp = table.unpack or unpack
-local esc = string.char(27) -- 0x1b: see the Wikipedia link below
+-- 0x1b: see the Wikipedia link above
+local ESC = string.char(27)
 
 -- Helper function to create color escape-codes. Read this for more info:
 -- https://en.wikipedia.org/wiki/ANSI_escape_code
 -- One or more numbers expected
 local function e(...)
-  return esc.."["..table.concat({...}, ";").."m"
+  return ESC.."["..table.concat({...}, ";").."m"
 end
-
--- String templates
-local Fmt = {
-  Out = {
-    Console  = e(2).."%s ["..e(0,1).."%s %s%s"..e(0,2).."] %s@%s:"..e(0).." %s",
-    LogFile  = "%s [%s %s] %s@%s: %s"
-  },
-  FName = "%s_%s.log",
-  Time = "%H:%M:%S"
-}
 
 -- Return true if 'path' exists or false if not
 local function DirExists(path)
@@ -40,7 +29,9 @@ local function DirNormalize(str)
 
   if posix then
     -- POSIX
-    str = (not str:find("%/+", -1)) and str.."/" or str
+    str = (not str:find("%/+", -1))
+      and str:gsub("\\", "/") .. "/"
+       or str:gsub("\\", "/")
   else
     -- Windows
     str = (not str:find("%\\+", -1))
@@ -51,10 +42,15 @@ local function DirNormalize(str)
   return str
 end
 
--- The default log level
-local LogLvl = 2
--- Header template
-local LogHeader = "\n"..e(2).."%s ["..e(0,1).."%s"..e(0,2).."]"..e(0).."\n"
+-- String templates
+local Fmt = {
+  Out = {
+    Console  = e(2).."%s ["..e(0,1).."%s %s%s"..e(0,2).."] %s@%s:"..e(0).." %s",
+    LogFile  = "%s [%s %s] %s@%s: %s"
+  },
+  FName = "%s_%s.log",
+  Time = "%H:%M:%S"
+}
 
 local LogType = {
   [0] = { Name = "OTHER", Color = "30" },
@@ -66,26 +62,33 @@ local LogType = {
   [6] = { Name = "FATAL", Color = "35" }
 }
 
--- Path where log files are saved
-Logit.Path       = "./"
-Logit.Namespace  = "Logit"
--- By default, Logit don't write logs to the terminal
-Logit.Console    = false
-Logit.FileSuffix = "%Y-%m-%d"
+local unp       = table.unpack or unpack
+-- Header template
+local LogHeader = "\n"..e(2).."%s ["..e(0,1).."%s"..e(0,2).."]"..e(0).."\n"
 
-local function IsLogLevel(str)
-  if type(str) == "string" then
-    for i = 0, #LogType do
-      if str:upper() == LogType[i].Name:gsub("%.", "") then
-        return i
-      end
-    end
-    return false
-  else return false end
-end
+-- The Logit class
+local Logit = {}
+
+-- Path where log files are saved
+Logit.Path      = DirNormalize("./")
+Logit.Namespace = "Logit"
+-- By default, Logit don't write logs to the terminal
+Logit.Console   = false
+Logit.Suffix    = "%Y-%m-%d"
+-- The default log level (DEBUG)
+Logit.Level     = 2
+
+-- Public log types
+Logit.OTHER = 0
+Logit.TRACE = 1
+Logit.DEBUG = 2
+Logit.INFO  = 3
+Logit.WARN  = 4
+Logit.ERROR = 5
+Logit.FATAL = 6
 
 function Logit:new(name, dir, console, suffix, header, ...)
-  local err = "Bad argument #%s to 'new()', '%s' expected, got %s"
+  local err = "Bad argument #%s to 'new()', '%s' expected, got '%s'"
 
   -- Arguments type check
   assert(
@@ -115,13 +118,13 @@ function Logit:new(name, dir, console, suffix, header, ...)
   -- End Arguments type check
 
   local o = setmetatable({}, { __call = self.log, __index = self })
-  o.Namespace  = name or self.Namespace
-  o.Console    = console or self.Console
-  o.FileSuffix = suffix or self.FileSuffix
+  o.Namespace = name or self.Namespace
+  o.Console   = console or self.Console
+  o.Suffix    = suffix or self.Suffix
 
   -- If 'dir' is nil or an empty string, then uses the current
   -- path for the logs files
-  if not dir or  #dir == 0 then
+  if not dir or #dir == 0 then
     o.Path = self.Path
 
   -- Or converts 'dir' to a valid path (if exists)
@@ -143,13 +146,13 @@ function Logit:new(name, dir, console, suffix, header, ...)
   local file = io.open(
     o.Path..Fmt.FName:format(
       o.Namespace,
-      os.date(o.FileSuffix)
+      os.date(o.Suffix)
     ),
     "a+"
   )
 
   -- The gsub at the end removes color escape-codes
-  local fout = LogHeader:format(time, header):gsub(esc.."%[(.-)m", "")
+  local fout = LogHeader:format(time, header):gsub(ESC.."%[(.-)m", "")
   file:write(fout)
   file:close()
 
@@ -157,13 +160,15 @@ function Logit:new(name, dir, console, suffix, header, ...)
   return o
 end
 
-function Logit:log(msg, lvl, ...)
-  -- 'lvl' is optional and if isn't a log level ("error", "warn", etc...),
-  -- assumes that is part of '...'
-  local lvl = IsLogLevel(lvl) or LogLvl
-  local va  = IsLogLevel(lvl) and {...} or { lvl, ... }
+function Logit:log(lvl, msg, ...)
+  local lvlt = type(lvl)
+  local err = "Bad argument #1 to 'log()', 'number' or 'nil' expected, got '"..lvlt.."'"
+
+  -- 'lvl' isn't optional anymore and is the first argument needed
+  assert(lvlt == "number", err)
+
   -- 'log()' assumes that 'msg' is an string
-  local msg = tostring(msg)
+  local msg = tostring(msg or LogType[lvl or self.Level].Name)
 
   -- This prevents that 'Logit.lua' appears in the log message when 'expect()' is called.
   -- Basically it's like the ternary operator in C:
@@ -176,7 +181,7 @@ function Logit:log(msg, lvl, ...)
   local file = io.open(
     self.Path .. Fmt.FName:format(
       self.Namespace,
-      os.date(self.FileSuffix)
+      os.date(self.Suffix)
     ),
     "a+"
   )
@@ -191,9 +196,9 @@ function Logit:log(msg, lvl, ...)
     -- Source file from 'log()' is called
     info.short_src, -- Line where is called
     info.currentline,
-    msg:format(unp(va))
+    msg:format(...)
       -- Removes ANSI SGR codes
-      :gsub("("..esc.."%[(.-)m)", "")
+      :gsub("("..ESC.."%[(.-)m)", "")
   )
 
   -- The '\n' makes logs divide by lines instead of accumulating
@@ -210,7 +215,7 @@ function Logit:log(msg, lvl, ...)
       info.short_src,
       info.currentline,
       -- Here we don't remove ANSI codes because we want a colored output
-      msg:format(unp(va))
+      msg:format(...)
     )
     print(cout)
   end
@@ -225,27 +230,30 @@ function Logit:log(msg, lvl, ...)
   end
 end
 
-function Logit:expect(exp, msg, lvl, ...)
+function Logit:expect(exp, msg, ...)
   -- 'expect()' is mainly for errors
-  if not exp then self:log(msg, IsLogLevel(lvl) or "error", ...)
-  else return exp end
+  if not exp then
+    self:log(self.ERROR, msg, ...)
+  else
+    return exp
+  end
 end
 
--- Write a log "header". May util if you want to separate some logs or create "breakpoints", etc...
+-- Write a log "header". Can be useful if you want to separate some logs or create "breakpoints", etc...
 function Logit:header(msg, ...)
   if type(msg) == "string" and #msg > 0 then
-    local msg = msg:format(...)
+    local msg  = msg:format(...)
     local time = os.date(Fmt.Time)
     local file = io.open(
       self.Path..Fmt.FName:format(
         self.Namespace,
-        os.date(self.FileSuffix)
+        os.date(self.Suffix)
       ),
       "a+"
     )
 
     -- The gsub at the end removes color escape-codes
-    local fout = LogHeader:format(time, msg):gsub(esc.."%[(.-)m", "")
+    local fout = LogHeader:format(time, msg):gsub(ESC.."%[(.-)m", "")
     file:write(fout)
     file:close()
 
@@ -255,18 +263,30 @@ function Logit:header(msg, ...)
   end
 end
 
-function Logit:setLogLvl(lvl)
-  -- Now, Logit only take strings for log levels
-  local lvl = (type(lvl) == "string") and lvl
-  LogLvl    = IsLogLevel(lvl) or 2
+function Logit:set_log_level(lvl)
+  local lvlt = type(lvl)
+  local err  = "Bad argument for 'set_log_level()', 'number' expected, got '" .. lvlt .. "'"
+
+  -- Logit don't take strings for log levels anymore
+  assert(lvlt == "number", err)
+
+  Level = lvl
 end
 
-function Logit:setFileSuffix(str)
-  local str = (type(str) == "string" and #str > 0)
+function Logit:set_suffix(str)
+  local strt = type(str)
+  local err  = "Bad argument for 'set_suffix()', 'string' expected, got '" .. strt .. "'"
+
+  assert(strt == "string")
+
+  local str = (#str > 0)
     and str
      or "%Y-%m-%d"
 
-  self.FileSuffix = str
+  self.Suffix = str
 end
 
-return setmetatable(Logit, { __call = Logit.new, __index = Logit })
+return setmetatable(Logit, {
+  __call = Logit.new,
+  __index = Logit
+})
