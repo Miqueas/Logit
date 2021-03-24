@@ -42,6 +42,22 @@ local function DirNormalize(str)
   return str
 end
 
+function _(s)
+  if
+    s == "other" or
+    s == "trace" or
+    s == "debug" or
+    s == "info" or
+    s == "warn" or
+    s == "error" or
+    s == "fatal"
+  then
+    return true
+  else
+    return false
+  end
+end
+
 -- String templates
 local Fmt = {
   Out = {
@@ -75,8 +91,6 @@ Logit.Namespace = "Logit"
 -- By default, Logit don't write logs to the terminal
 Logit.Console   = false
 Logit.Suffix    = "%Y-%m-%d"
--- The default log level (DEBUG)
-Logit.Level     = 2
 
 -- Public log types
 Logit.OTHER = 0
@@ -118,9 +132,9 @@ function Logit:new(name, dir, console, suffix, header, ...)
   -- End Arguments type check
 
   local o = setmetatable({}, { __call = self.log, __index = self })
-  o.Namespace = name or self.Namespace
+  o.Namespace = name    or self.Namespace
   o.Console   = console or self.Console
-  o.Suffix    = suffix or self.Suffix
+  o.Suffix    = suffix  or self.Suffix
 
   -- If 'dir' is nil or an empty string, then uses the current
   -- path for the logs files
@@ -162,13 +176,13 @@ end
 
 function Logit:log(lvl, msg, ...)
   local lvlt = type(lvl)
-  local err = "Bad argument #1 to 'log()', 'number' or 'nil' expected, got '"..lvlt.."'"
+  local err = "Bad argument #1 to 'log()', 'number' expected, got '"..lvlt.."'"
 
   -- 'lvl' isn't optional anymore and is the first argument needed
   assert(lvlt == "number", err)
 
   -- 'log()' assumes that 'msg' is an string
-  local msg = tostring(msg or LogType[lvl or self.Level].Name)
+  local msg = tostring(msg or LogType[lvl].Name)
 
   -- This prevents that 'Logit.lua' appears in the log message when 'expect()' is called.
   -- Basically it's like the ternary operator in C:
@@ -263,16 +277,6 @@ function Logit:header(msg, ...)
   end
 end
 
-function Logit:set_log_level(lvl)
-  local lvlt = type(lvl)
-  local err  = "Bad argument for 'set_log_level()', 'number' expected, got '" .. lvlt .. "'"
-
-  -- Logit don't take strings for log levels anymore
-  assert(lvlt == "number", err)
-
-  Level = lvl
-end
-
 function Logit:set_suffix(str)
   local strt = type(str)
   local err  = "Bad argument for 'set_suffix()', 'string' expected, got '" .. strt .. "'"
@@ -286,7 +290,20 @@ function Logit:set_suffix(str)
   self.Suffix = str
 end
 
+function Logit__index(self, k)
+  if not rawget(self, k) and _(k) then
+    local l = rawget(self, k:upper())
+    return function (self, ...)
+      self:log(l, ...)
+    end
+  elseif rawget(self, k) then
+    return rawget(self, k)
+  else
+    return nil
+  end
+end
+
 return setmetatable(Logit, {
   __call = Logit.new,
-  __index = Logit
+  __index = Logit__index
 })
