@@ -35,14 +35,7 @@ function Logit:log(lvl, msg, ...) end
 ---@param msg? string The message you want to log.
 ---@param ...? any
 ---@return any
-function Logit:expect(exp, msg, ...)
-  -- 'expect()' is mainly for errors
-  if not exp then
-    self:log(self.ERROR, msg, ...)
-  else
-    return exp
-  end
-end
+function Logit:expect(exp, msg, ...) end
 
 ---Write a log "header". Can be useful if you want to separate some logs
 ---or create "breakpoints", etc...
