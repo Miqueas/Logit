@@ -2,7 +2,7 @@
 -- https://github.com/sumneko/lua-language-server
 -- luacheck: no unused
 
----@class lib.Logit
+---@class Logit
 ---@field Path string
 ---@field Namespace string
 ---@field Console boolean
@@ -22,7 +22,7 @@ local Logit = {}
 ---@param suffix? string
 ---@param header? string
 ---@param ...? any
----@return lib.Logit
+---@return Logit
 function Logit:new(name, dir, console, suffix, header, ...) end
 
 ---@param lvl number
