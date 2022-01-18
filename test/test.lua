@@ -14,7 +14,7 @@ log:expect(type(config) == "table", "user config can't be loaded")
 -- More code here...
 ]]
 
----@type lib.Logit
+---@type Logit
 local Logit = require("Logit")
 local log = Logit:new("Test", "./test", true)
 
