@@ -29,6 +29,7 @@
 ]#
 
 import std/times
+import std/strformat
 from std/os import dirExists, getTempDir, getAppFilename, `/`
 from std/strutils import join, format
 
@@ -45,9 +46,9 @@ type
     path: string
     namespace*: string
     filePrefix: string
-    enableFile: bool
-    defaultLevel: LogLevel
-    enableConsole: bool
+    enableFile*: bool
+    defaultLevel*: LogLevel
+    enableConsole*: bool
 
 proc e(n: varargs[int]): string = return '\e' & '[' & join(n, ";") & 'm'
 
@@ -155,4 +156,5 @@ template header*(l: Logit, msg: string) =
 # Setters and Getters
 proc path*(l: Logit): string {.inline.} = l.path
 proc `path=`*(l: var Logit, newPath: string) {.inline.} =
-  if dirExists(newPath): l.path = newPath
+  assert dirExists(newPath), fmt"`{newPath}` isn't a valid path or doesn't exists"
+  l.path = newPath
