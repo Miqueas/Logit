@@ -29,7 +29,7 @@
 ]#
 
 import std/times
-from std/os import getTempDir, getAppFilename, `/`
+from std/os import dirExists, getTempDir, getAppFilename, `/`
 from std/strutils import join, format
 
 type
@@ -43,7 +43,7 @@ type
     FATAL
   Logit* = object
     path: string
-    namespace: string
+    namespace*: string
     filePrefix: string
     enableFile: bool
     defaultLevel: LogLevel
@@ -65,9 +65,10 @@ const
     ),
     Quit: (
       File: "$1 [QUIT]: $2\n",
-      Console: e(2) & "$1 [" & e(0, 31) & "QUIT" & e(0, 2) & "]: " & e(0) & "$2\n"
+      Console: e(2) & "$1 [" & e(0, 1, 31) & "QUIT" & e(0, 2) & "]: " & e(0) & "$2\n"
     )
   )
+
   ASSOC = [
     ( name: "OTHER", color: 30 ),
     ( name: "TRACE", color: 32 ),
@@ -78,6 +79,7 @@ const
     ( name: "FATAL", color: 35 )
   ]
 
+# Logit constructor
 proc newLogit*(path = getTempDir(), name = "Logit", level = OTHER, console = false, file = true, prefix = "YYYY-MM-dd"): Logit =
   var l = Logit(
     path: path,
@@ -102,6 +104,7 @@ proc newLogit*(path = getTempDir(), name = "Logit", level = OTHER, console = fal
 
   return l
 
+# Logging API
 template log*(l: Logit, msg: string, quitMsg = "") = l.log(l.defaultLevel, msg, quitMsg)
 
 template log*(l: Logit, level: LogLevel, msg: string, quitMsg = "") =
@@ -122,17 +125,17 @@ template log*(l: Logit, level: LogLevel, msg: string, quitMsg = "") =
     let cout = FMT.Out.Console.format(time, l.namespace, e(ASSOC[ord(level)].color), ASSOC[ord(level)].name, info.filename, info.line, msg)
     echo cout
 
-    if ord(level) > 4:
-      file.write(FMT.Quit.File.format(time, exitMsg))
-      file.close()
-      quit(FMT.Quit.Console.format(time, exitMsg), 1)
-
   if ord(level) > 4:
     file.write(FMT.Quit.File.format(time, exitMsg))
     file.close()
-    quit(1)
 
-  file.close()
+    if l.enableConsole: quit(FMT.Quit.Console.format(time, exitMsg), 1)
+    else: quit(1)
+  else: file.close()
+
+template expect*(l: Logit, exp: untyped, msg: string): untyped =
+  if not exp: l.log(LogLevel.ERROR, msg)
+  exp
 
 template header*(l: Logit, msg: string) =
   let
@@ -148,3 +151,8 @@ template header*(l: Logit, msg: string) =
   if l.enableConsole:
     let cout = FMT.Header.Console.format(time, msg)
     echo cout
+
+# Setters and Getters
+proc path*(l: Logit): string {.inline.} = l.path
+proc `path=`*(l: var Logit, newPath: string) {.inline.} =
+  if dirExists(newPath): l.path = newPath
