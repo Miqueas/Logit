@@ -45,7 +45,7 @@ type
   Logit* = object
     path: string
     namespace*: string
-    filePrefix: string
+    filePrefix*: TimeFormat
     enableFile*: bool
     defaultLevel*: LogLevel
     enableConsole*: bool
@@ -81,7 +81,13 @@ const
   ]
 
 # Logit constructor
-proc newLogit*(path = getTempDir(), name = "Logit", level = OTHER, console = false, file = true, prefix = "YYYY-MM-dd"): Logit =
+proc newLogit*(path = getTempDir(),
+               name = "Logit",
+               level = OTHER,
+               console = false,
+               file = true,
+               prefix = initTimeFormat("YYYY-MM-dd")
+              ): Logit =
   var l = Logit(
     path: path,
     namespace: name,
@@ -134,9 +140,8 @@ template log*(l: Logit, level: LogLevel, msg: string, quitMsg = "") =
     else: quit(1)
   else: file.close()
 
-template expect*(l: Logit, exp: untyped, msg: string): untyped =
+template expect*(l: Logit, exp: untyped, msg: string) =
   if not exp: l.log(LogLevel.ERROR, msg)
-  exp
 
 template header*(l: Logit, msg: string) =
   let
