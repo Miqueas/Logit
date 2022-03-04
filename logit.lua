@@ -2,12 +2,26 @@
   Author: Miqueas Martinez (https://github.com/Miqueas)
   Co-Author: Nelson "darltrash" López (https://github.com/darltrash)
   Date: 2020/09/12
-  License: MIT (see it in the repository)
+  License: zlib (see it in the repository)
   Git Repository: https://github.com/Miqueas/Logit
 ]]
 
 -- 0x1b: see the Wikipedia link above
 local ESC = string.char(27)
+local is_win
+
+if love then
+  is_win = love.system.getOS() == "Windows"
+elseif jit then
+  is_win = jit.os == "Windows"
+else
+  -- Windows specific env var
+  if os.getenv("WinDir") then
+    is_win = true
+  else
+    is_win = false
+  end
+end
 
 -- Helper function to create color escape-codes. Read this for more info:
 -- https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -16,34 +30,46 @@ local function e(...)
   return ESC .. "[" .. table.concat({ ... }, ";") .. "m"
 end
 
--- Return true if 'path' exists or false if not
-local function DirExists(path)
+-- Return the path to the temp dir
+local function get_temp_dir()
+  if is_win then
+    -- Windows. Same as:
+    --     os.getenv("TEMP")
+    --     os.getenv("TMP")
+    return os.getenv("UserProfile") .. "\\AppData\\Local\\Temp"
+  else
+    -- Unix
+    return os.getenv("TMPDIR") or "/tmp"
+  end
+end
+
+-- Return `true` if `path` exists
+local function dir_exists(path)
   local f = io.open(path)
   return (f and f:close()) and true or false
 end
 
--- Appends a / or a \ (depending on the OS's directory system)
--- at the end of a path string
-local function DirNormalize(str)
+-- Appends a / or a \ (depending on the OS) at the end of a path string
+local function dir_normalize(str)
   str = tostring(str or "")
-  local posix = jit and not (jit.os == "Windows") or os.getenv("HOME")
 
-  if posix then
-    -- POSIX
-    str = (not str:find("%/+", -1)) and str:gsub("\\", "/") .. "/"
-      or str:gsub("\\", "/")
-  else
+  if is_win then
     -- Windows
-    str = (not str:find("%\\+", -1)) and str:gsub("/", "\\") .. "\\"
+    str = (not str:find("%\\+", -1))
+      and str:gsub("/", "\\") .. "\\"
       or str:gsub("/", "\\")
+  else
+    -- POSIX
+    str = (not str:find("%/+", -1))
+      and str:gsub("\\", "/") .. "/"
+      or str:gsub("\\", "/")
   end
 
   return str
 end
 
 function _(s)
-  if
-    s == "other"
+  if s == "other"
     or s == "trace"
     or s == "debug"
     or s == "info"
@@ -58,54 +84,38 @@ function _(s)
 end
 
 -- String templates
-local Fmt = {
-  Out = {
-    Console = e(2)
-      .. "%s ["
-      .. e(0, 1)
-      .. "%s %s%s"
-      .. e(0, 2)
-      .. "] %s@%s:"
-      .. e(0)
-      .. " %s",
-    LogFile = "%s [%s %s] %s@%s: %s",
-  },
-  FName = "%s_%s.log",
+local FMT = {
+  Filename = "%s_%s.log",
   Time = "%H:%M:%S",
+  Out = {
+    File = "%s [%s %s] %s@%s: %s",
+    Console = e(2) .. "%s [" .. e(0, 1) .. "%s %s%s" .. e(0, 2) .. "] %s@%s:" .. e(0) .. " %s"
+    --                                         ^~ This one is used for the log level color
+  },
+  Header = {
+    File = "\n%s [%s]\n\n",
+    Console = "\n" .. e(2) .. "%s [" .. e(0, 1) .. "%s" .. e(0, 2) .. "]" .. e(0) .. "\n\n"
+  },
+  Quit = {
+    File = "%s [QUIT]: %s\n",
+    Console = e(2) .. "%s [" .. e(0, 1, 31) .. "QUIT" .. e(0, 2) .. "]: " .. e(0) .. "%s\n"
+  }
 }
 
-local LogType = {
-  [0] = { Name = "OTHER", Color = "30" },
-  [1] = { Name = "TRACE", Color = "32" },
-  [2] = { Name = "DEBUG", Color = "36" },
-  [3] = { Name = "INFO.", Color = "34" },
-  [4] = { Name = "WARN.", Color = "33" },
-  [5] = { Name = "ERROR", Color = "31" },
-  [6] = { Name = "FATAL", Color = "35" },
+local ASSOC = {
+  [0] = { name = "OTHER", color = "30" },
+  [1] = { name = "TRACE", color = "32" },
+  [2] = { name = "DEBUG", color = "36" },
+  [3] = { name = "INFO.", color = "34" },
+  [4] = { name = "WARN.", color = "33" },
+  [5] = { name = "ERROR", color = "31" },
+  [6] = { name = "FATAL", color = "35" },
 }
-
--- Header template
-local LogHeader = "\n"
-  .. e(2)
-  .. "%s ["
-  .. e(0, 1)
-  .. "%s"
-  .. e(0, 2)
-  .. "]"
-  .. e(0)
-  .. "\n"
 
 -- The Logit class
 local Logit = {}
 
--- Path where log files are saved
-Logit.Path = DirNormalize("./")
-Logit.Namespace = "Logit"
--- By default, Logit don't write logs to the terminal
-Logit.Console = false
-Logit.Suffix = "%Y-%m-%d"
-
--- Public log types
+-- Public log levels
 Logit.OTHER = 0
 Logit.TRACE = 1
 Logit.DEBUG = 2
@@ -114,81 +124,79 @@ Logit.WARN = 4
 Logit.ERROR = 5
 Logit.FATAL = 6
 
-function Logit:new(name, dir, console, suffix, header, ...)
+-- Path where log files are saved
+Logit.path = dir_normalize("./")
+Logit.namespace = "Logit"
+Logit.filePrefix = "%Y-%m-%d"
+Logit.defaultLevel = Logit.OTHER
+-- By default, Logit don't write logs to the terminal
+Logit.enableConsole = false
+
+function Logit:new(path, name, level, console, prefix, ...)
   local err = "Bad argument #%s to 'new()', '%s' expected, got '%s'"
 
   -- Arguments type check
-  assert(
-    type(name) == "string" or type(name) == "nil",
-    err:format(1, "string", type(name))
-  )
-
-  assert(
-    type(dir) == "string" or type(dir) == "nil",
-    err:format(2, "string", type(dir))
-  )
-
-  assert(
-    type(console) == "boolean" or type(console) == "nil",
-    err:format(3, "boolean", type(console))
-  )
-
-  assert(
-    type(suffix) == "string" or type(suffix) == "nil",
-    err:format(4, "string", type(suffix))
-  )
-
-  assert(
-    type(header) == "string" or type(header) == "nil",
-    err:format(5, "string", type(header))
-  )
-  -- End Arguments type check
-
-  local o = setmetatable({}, { __call = self.log, __index = self })
-  o.Namespace = name or self.Namespace
-  o.Console = console or self.Console
-  o.Suffix = suffix or self.Suffix
-
-  -- If 'dir' is nil or an empty string, then uses the current
-  -- path for the logs files
-  if not dir or #dir == 0 then
-    o.Path = self.Path
-
-    -- Or converts 'dir' to a valid path (if exists)
-  elseif dir and DirExists(dir) then
-    o.Path = DirNormalize(dir)
-
-    -- Or stops if the path doesn't exists
-  elseif dir and not DirExists(dir) then
-    error(
-      "Path '"
-        .. dir
-        .. "' doesn't exists or you don't have permissions to use it."
+  do
+    assert(
+      type(name) == "string" or type(name) == "nil",
+      err:format(1, "string", type(name))
     )
 
-    -- Or... Idk... Unexpected errors can happen!
-  else
-    error(
-      "Unknown error while checking (and/or loading) '"
-        .. dir
-        .. "'... (argument #2 in 'new()')"
+    assert(
+      type(path) == "string" or type(path) == "nil",
+      err:format(2, "string", type(path))
+    )
+
+    assert(
+      type(console) == "boolean" or type(console) == "nil",
+      err:format(3, "boolean", type(console))
+    )
+
+    assert(
+      type(suffix) == "string" or type(suffix) == "nil",
+      err:format(4, "string", type(suffix))
+    )
+
+    assert(
+      type(header) == "string" or type(header) == "nil",
+      err:format(5, "string", type(header))
     )
   end
 
+  local o = setmetatable({}, { __call = self.log, __index = self })
+  o.namespace = name or self.namespace
+  o.enableConsole = console or self.enableConsole
+  o.filePrefix = prefix or self.filePrefix
+
+  -- If 'path' is nil or an empty string, then uses the current
+  -- path for the logs files
+  if not path or #path == 0 then
+    o.path = self.path
+
+  -- Or converts 'path' to a valid path (if exists)
+  elseif path and dir_exists(path) then
+    o.path = dir_normalize(path)
+
+  -- Or stops if the path doesn't exists
+  elseif path and not dir_exists(path) then
+    error("Path '" .. path .. "' doesn't exists or you don't have permissions to use it.")
+  else -- Or... Idk... Unexpected errors can happen!
+    error("Unknown error while checking '" .. path .. "'... (argument #2 in 'new()')")
+  end
+
   -- Writes a header at begin of the log
-  header = header and header:format(...) or "AUTOGENERATED BY LOGGER"
-  local time = os.date(Fmt.Time)
-  local file = io.open(
-    o.Path .. Fmt.FName:format(o.Namespace, os.date(o.Suffix)),
-    "a+"
-  )
+  local date = os.date(o.filePrefix)
+  local time = os.date(FMT.Time)
+  local file = io.open(o.path .. FMT.Filename:format(date, o.namespace), "a+")
 
   -- The gsub at the end removes color escape-codes
-  local fout = LogHeader:format(time, header):gsub(ESC .. "%[(.-)m", "")
-  file:write(fout)
+  file:write(FMT.Header.File:format(time, "GENERATED BY LOGIT, DO NOT EDIT"))
   file:close()
 
-  -- Header is written, so... Returns the new Logit instance!
+  if o.enableConsole then
+    print(FMT.Header.Console:format(time, "LOGGING LIBRARY STARTED"))
+  end
+
   return o
 end
 
@@ -214,13 +222,13 @@ function Logit:log(lvl, msg, ...)
 
   -- The log file
   local file = io.open(
-    self.Path .. Fmt.FName:format(self.Namespace, os.date(self.Suffix)),
+    self.Path .. FMT.FName:format(self.Namespace, os.date(self.Suffix)),
     "a+"
   )
 
   -- Prevents put different times in the file and the standard output
-  local time = os.date(Fmt.Time)
-  local fout = Fmt.Out.LogFile:format(
+  local time = os.date(FMT.Time)
+  local fout = FMT.Out.LogFile:format(
     time,
     self.Namespace,
     -- Name of the type of log
@@ -236,7 +244,7 @@ function Logit:log(lvl, msg, ...)
   file:close()
 
   if self.Console then
-    local cout = Fmt.Out.Console:format(
+    local cout = FMT.Out.Console:format(
       time,
       self.Namespace,
       -- Uses the correct color for differents logs
@@ -276,9 +284,9 @@ end
 function Logit:header(msg, ...)
   if type(msg) == "string" and #msg > 0 then
     msg = msg:format(...)
-    local time = os.date(Fmt.Time)
+    local time = os.date(FMT.Time)
     local file = io.open(
-      self.Path .. Fmt.FName:format(self.Namespace, os.date(self.Suffix)),
+      self.Path .. FMT.FName:format(self.Namespace, os.date(self.Suffix)),
       "a+"
     )
 
