@@ -4,13 +4,23 @@ tasks:
   - name: Setup workspace
     command: |
       sudo apt update; sudo apt upgrade -y
-      sudo apt install -y lua5.1 gcc
+      sudo apt install -y lua5.1 liblua5.1-dev build-essential cmake gcc
+
       cd $HOME
       wget https://nim-lang.org/choosenim/init.sh -O choosenim
       chmod +x choosenim
       ./choosenim -y
       rm -rf choosenim
       echo "export PATH=$HOME/.nimble/bin:$PATH" >> $HOME/.bashrc
+
+      wget https://luarocks.org/releases/luarocks-3.8.0.tar.gz
+      tar -xf luarocks-3.8.0.tar.gz
+      cd luarocks-3.8.0/
+      ./configure
+      make
+      sudo make install
+      cd ..
+      sudo rm -rf luarocks-3.8.0.tar.gz luarocks-3.8.0/
 
 vscode:
   extensions:

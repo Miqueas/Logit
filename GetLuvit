@@ -1,6 +1,5 @@
 #!/bin/bash
 
-sudo apt install cmake -y
 cd $HOME
 git clone -q --recursive https://github.com/luvit/lit LitSrc
 git clone -q --recursive https://github.com/luvit/luvi LuviSrc
