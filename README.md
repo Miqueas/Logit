@@ -1,7 +1,5 @@
 [![License][LicenseBadge]][licenseURL]
 
-¡Lee la versión en español [aquí](README_es.md)!
-
 # Logit
 
 An small utility library for Lua logs that you can easily integrate into your projects.
