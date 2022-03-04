@@ -8,20 +8,7 @@
 
 -- 0x1b: see the Wikipedia link above
 local ESC = string.char(27)
-local is_win
-
-if love then
-  is_win = love.system.getOS() == "Windows"
-elseif jit then
-  is_win = jit.os == "Windows"
-else
-  -- Windows specific env var
-  if os.getenv("WinDir") then
-    is_win = true
-  else
-    is_win = false
-  end
-end
+local is_win = package.config:sub(1, 1) == "\\"
 
 -- Helper function to create color escape-codes. Read this for more info:
 -- https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -69,13 +56,13 @@ local function dir_normalize(str)
 end
 
 function _(s)
-  if s == "other"
-    or s == "trace"
-    or s == "debug"
-    or s == "info"
-    or s == "warn"
-    or s == "error"
-    or s == "fatal"
+  if s == "OTHER"
+    or s == "TRACE"
+    or s == "DEBUG"
+    or s == "INFO"
+    or s == "WARN"
+    or s == "ERROR"
+    or s == "FATAL"
   then
     return true
   else
@@ -88,7 +75,7 @@ local FMT = {
   Filename = "%s_%s.log",
   Time = "%H:%M:%S",
   Out = {
-    File = "%s [%s %s] %s@%s: %s",
+    File = "%s [%s %s] %s@%s: %s\n",
     Console = e(2) .. "%s [" .. e(0, 1) .. "%s %s%s" .. e(0, 2) .. "] %s@%s:" .. e(0) .. " %s"
     --                                         ^~ This one is used for the log level color
   },
@@ -125,48 +112,49 @@ Logit.ERROR = 5
 Logit.FATAL = 6
 
 -- Path where log files are saved
-Logit.path = dir_normalize("./")
+Logit.path = dir_normalize(get_temp_dir())
 Logit.namespace = "Logit"
 Logit.filePrefix = "%Y-%m-%d"
 Logit.defaultLevel = Logit.OTHER
 -- By default, Logit don't write logs to the terminal
 Logit.enableConsole = false
 
-function Logit:new(path, name, level, console, prefix, ...)
+function Logit:new(path, name, level, console, prefix)
   local err = "Bad argument #%s to 'new()', '%s' expected, got '%s'"
 
   -- Arguments type check
   do
     assert(
-      type(name) == "string" or type(name) == "nil",
-      err:format(1, "string", type(name))
+      type(path) == "string" or type(path) == "nil",
+      err:format(1, "string", type(path))
     )
 
     assert(
-      type(path) == "string" or type(path) == "nil",
-      err:format(2, "string", type(path))
+      type(name) == "string" or type(name) == "nil",
+      err:format(2, "string", type(name))
+    )
+
+    assert(
+      type(level) == "number" or type(level) == "nil",
+      err:format(3, "number", type(level))
     )
 
     assert(
       type(console) == "boolean" or type(console) == "nil",
-      err:format(3, "boolean", type(console))
+      err:format(4, "boolean", type(console))
     )
 
     assert(
-      type(suffix) == "string" or type(suffix) == "nil",
-      err:format(4, "string", type(suffix))
-    )
-
-    assert(
-      type(header) == "string" or type(header) == "nil",
-      err:format(5, "string", type(header))
+      type(prefix) == "string" or type(prefix) == "nil",
+      err:format(5, "string", type(prefix))
     )
   end
 
   local o = setmetatable({}, { __call = self.log, __index = self })
   o.namespace = name or self.namespace
-  o.enableConsole = console or self.enableConsole
   o.filePrefix = prefix or self.filePrefix
+  o.defaultLevel = level or self.defaultLevel
+  o.enableConsole = console or self.enableConsole
 
   -- If 'path' is nil or an empty string, then uses the current
   -- path for the logs files
@@ -200,80 +188,79 @@ function Logit:new(path, name, level, console, prefix, ...)
   return o
 end
 
-function Logit:log(lvl, msg, ...)
+function Logit:log(lvl, msg, quitMsg, ...)
   local lvlt = type(lvl)
-  local err = "Bad argument #1 to 'log()', 'number' expected, got '"
-    .. lvlt
-    .. "'"
+  local err = "Bad argument #1 to 'log()', 'number' expected, got '" .. lvlt .. "'"
 
   -- 'lvl' isn't optional anymore and is the first argument needed
   assert(lvlt == "number", err)
 
   -- 'log()' assumes that 'msg' is an string
-  msg = tostring(msg or LogType[lvl].Name)
+  msg = tostring(msg or ASSOC[lvl].name)
+  local exitMsg = (quitMsg == "" or type(quitMsg) == "nil")
+    and msg
+    or quitMsg
 
   -- This prevents that 'Logit.lua' appears in the log message
   -- when 'expect()' is called.
   -- Basically it's like the ternary operator in C:
   --    (exp) ? TRUE : FALSE
-  local info = (debug.getinfo(2, "Sl").short_src:find("(Logit.lua)"))
-      and debug.getinfo(3, "Sl")
+  local info = (debug.getinfo(2, "Sl").short_src:find("(logit.lua)"))
+    and debug.getinfo(3, "Sl")
     or debug.getinfo(2, "Sl")
 
-  -- The log file
-  local file = io.open(
-    self.Path .. FMT.FName:format(self.Namespace, os.date(self.Suffix)),
-    "a+"
-  )
-
   -- Prevents put different times in the file and the standard output
+  local date = os.date(self.filePrefix)
   local time = os.date(FMT.Time)
-  local fout = FMT.Out.LogFile:format(
+  -- The log file
+  local file = io.open(self.path .. FMT.Filename:format(date, self.namespace), "a+")
+  local fout = FMT.Out.File:format(
     time,
-    self.Namespace,
+    self.namespace,
     -- Name of the type of log
-    LogType[lvl].Name,
+    ASSOC[lvl].name,
     -- Source file from 'log()' is called
     info.short_src, -- Line where is called
     info.currentline,
-    msg:format(...) -- Removes ANSI SGR codes:gsub("(" .. ESC .. "%[(.-)m)", "")
+    msg:format(...)
   )
 
   -- The '\n' makes logs divide by lines instead of accumulating
-  file:write(fout .. "\n")
-  file:close()
+  file:write(fout)
 
-  if self.Console then
+  if self.enableConsole then
     local cout = FMT.Out.Console:format(
       time,
       self.Namespace,
       -- Uses the correct color for differents logs
-      e(LogType[lvl].Color),
-      LogType[lvl].Name,
+      e(ASSOC[lvl].color),
+      ASSOC[lvl].name,
       info.short_src,
       info.currentline,
-      -- Here we don't remove ANSI codes because we want a colored output
       msg:format(...)
     )
     print(cout)
   end
 
   if lvl > 4 then
-    -- A log level major to 4 causes the program to stop
-    self:header(e(31) .. "SOMETHING WENT WRONG!")
+    file:write(FMT.Quit.File:format(time, exitMsg))
+    file:close()
+
+    if self.enableConsole then
+      print(FMT.Quit.Console:format(time, exitMsg))
+    end
 
     -- For Love2D compatibility
-    if love then
-      love.event.quit()
-    end
+    if love then love.event.quit() end
+
     os.exit(1)
-  end
+  else file:close() end
 end
 
-function Logit:expect(exp, msg, ...)
+function Logit:expect(exp, msg, quitMsg, ...)
   -- 'expect()' is mainly for errors
   if not exp then
-    self:log(self.ERROR, msg, ...)
+    self:log(self.ERROR, msg, quitMsg, ...)
   else
     return exp
   end
@@ -284,45 +271,17 @@ end
 function Logit:header(msg, ...)
   if type(msg) == "string" and #msg > 0 then
     msg = msg:format(...)
-    local time = os.date(FMT.Time)
-    local file = io.open(
-      self.Path .. FMT.FName:format(self.Namespace, os.date(self.Suffix)),
-      "a+"
-    )
 
-    -- The gsub at the end removes color escape-codes
-    local fout = LogHeader:format(time, msg):gsub(ESC .. "%[(.-)m", "")
-    file:write(fout)
+    local date = os.date(self.filePrefix)
+    local time = os.date(FMT.Time)
+    local file = io.open(self.path .. FMT.Filename:format(date, self.namespace), "a+")
+    file:write(FMT.Header.File:format(time, msg))
     file:close()
 
-    if self.Console then
-      print(LogHeader:format(time, msg))
-    end
-  end
-end
-
-function Logit:set_suffix(str)
-  assert(type(str) == "string")
-
-  str = (#str > 0) and str or "%Y-%m-%d"
-
-  self.Suffix = str
-end
-
-local function Logit__index(self, k)
-  if not rawget(self, k) and _(k) then
-    local l = rawget(self, k:upper())
-    return function(this, ...)
-      this:log(l, ...)
-    end
-  elseif rawget(self, k) then
-    return rawget(self, k)
-  else
-    return nil
+    if self.enableConsole then print(FMT.Header.File:format(time, msg)) end
   end
 end
 
 return setmetatable(Logit, {
   __call = Logit.new,
-  __index = Logit__index,
 })
