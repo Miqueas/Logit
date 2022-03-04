@@ -2,30 +2,8 @@
   Author: Miqueas Martinez (https://github.com/Miqueas)
   Co-Author: Nelson "darltrash" López (https://github.com/darltrash)
   Date: 2020/09/12
+  License: zlib (see it in the repository)
   Git Repository: https://github.com/Miqueas/Logit
-
-  zlib License
-
-  Copyright (c) 2020 - 2022 Miqueas Martinez
-
-  This software is provided 'as-is', without any express or implied
-  warranty. In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-    1. The origin of this software must not be misrepresented; you must not
-      claim that you wrote the original software. If you use this software
-      in a product, an acknowledgment in the product documentation would be
-      appreciated but is not required.
-
-    2. Altered source versions must be plainly marked as such, and must not be
-      misrepresented as being the original software.
-
-    3. This notice may not be removed or altered from any source
-      distribution.
 ]#
 
 import std/times
@@ -46,7 +24,6 @@ type
     path: string
     namespace*: string
     filePrefix*: TimeFormat
-    enableFile*: bool
     defaultLevel*: LogLevel
     enableConsole*: bool
 
@@ -85,14 +62,12 @@ proc newLogit*(path = getTempDir(),
                name = "Logit",
                level = OTHER,
                console = false,
-               file = true,
                prefix = initTimeFormat("YYYY-MM-dd")
               ): Logit =
   var l = Logit(
     path: path,
     namespace: name,
     filePrefix: prefix,
-    enableFile: file,
     defaultLevel: level,
     enableConsole: console
   )
@@ -112,7 +87,14 @@ proc newLogit*(path = getTempDir(),
   return l
 
 # Logging API
-template log*(l: Logit, msg: string, quitMsg = "") = l.log(l.defaultLevel, msg, quitMsg)
+template `()`*(l: Logit, msg: string, quitMsg = "") =
+  l.log(l.defaultLevel, msg, quitMsg)
+
+template `()`*(l: Logit, level: LogLevel, msg: string, quitMsg = "") =
+  l.log(level, msg, quitMsg)
+
+template log*(l: Logit, msg: string, quitMsg = "") =
+  l.log(l.defaultLevel, msg, quitMsg)
 
 template log*(l: Logit, level: LogLevel, msg: string, quitMsg = "") =
   let
@@ -159,7 +141,9 @@ template header*(l: Logit, msg: string) =
     echo cout
 
 # Setters and Getters
-proc path*(l: Logit): string {.inline.} = l.path
+proc path*(l: Logit): string {.inline.} =
+  l.path
+
 proc `path=`*(l: var Logit, newPath: string) {.inline.} =
   assert dirExists(newPath), fmt"`{newPath}` isn't a valid path or doesn't exists"
   l.path = newPath
