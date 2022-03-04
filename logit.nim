@@ -131,18 +131,15 @@ template header*(l: Logit, msg: string) =
     date = dt.format(l.filePrefix)
     time = dt.format(FMT.Time)
     file = open(l.path / format(FMT.Filename, date, l.namespace), fmAppend)
-    fout = FMT.Header.File.format(time, msg)
-  
-  file.write(fout)
+
+  file.write(FMT.Header.File.format(time, msg))
   file.close()
 
-  if l.enableConsole:
-    let cout = FMT.Header.Console.format(time, msg)
-    echo cout
+  if l.enableConsole: echo FMT.Header.Console.format(time, msg)
 
 # Setters and Getters
 proc path*(l: Logit): string {.inline.} =
-  l.path
+  return l.path
 
 proc `path=`*(l: var Logit, newPath: string) {.inline.} =
   assert dirExists(newPath), fmt"`{newPath}` isn't a valid path or doesn't exists"

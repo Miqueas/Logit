@@ -106,8 +106,8 @@ local Logit = {}
 Logit.OTHER = 0
 Logit.TRACE = 1
 Logit.DEBUG = 2
-Logit.INFO = 3
-Logit.WARN = 4
+Logit.INFO  = 3
+Logit.WARN  = 4
 Logit.ERROR = 5
 Logit.FATAL = 6
 
@@ -231,7 +231,7 @@ function Logit:log(lvl, msg, quitMsg, ...)
   if self.enableConsole then
     local cout = FMT.Out.Console:format(
       time,
-      self.Namespace,
+      self.namespace,
       -- Uses the correct color for differents logs
       e(ASSOC[lvl].color),
       ASSOC[lvl].name,
