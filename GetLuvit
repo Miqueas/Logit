@@ -1,0 +1,19 @@
+#!/bin/bash
+
+sudo apt install cmake -y
+cd $HOME
+git clone -q --recursive https://github.com/luvit/lit LitSrc
+git clone -q --recursive https://github.com/luvit/luvi LuviSrc
+cd LuviSrc
+make -s regular
+make -s
+mv build/luvi ..
+cd ..
+rm -rf LuviSrc
+cd LitSrc
+../luvi . -- make .
+mv lit ..
+cd ..
+rm -rf LitSrc
+./lit make github://luvit/luvit
+sudo mv lit luvi luvit /usr/local/bin
