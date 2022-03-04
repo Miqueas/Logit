@@ -1,15 +1,16 @@
-import logit
+import ../logit
 import std/os
 
 let logger = newLogit(path = getCurrentDir(), name = "Test", console = true)
 
-logger.log("O")
-logger.log(TRACE, "T")
-logger.log(DEBUG, "D")
-logger.log(INFO, "I")
-logger.log(WARN, "W")
+# Uses default logging level
+logger("O")
+logger(TRACE, "T")
+logger(DEBUG, "D")
+logger(INFO, "I")
+logger(WARN, "W")
 logger.header("hello")
 logger.expect(29 < 30, "Expected 29 < 30")
-logger.log(ERROR, "E")
+logger(ERROR, "E")
 # Never runs
-logger.log(FATAL, "F")
+logger(FATAL, "F")
