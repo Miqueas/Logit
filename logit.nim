@@ -28,6 +28,7 @@ type
     enableConsole*: bool
 
 proc e(n: varargs[int]): string = return '\e' & '[' & join(n, ";") & 'm'
+proc e(n: varargs[string]): string = return '\e' & '[' & join(n, ";") & 'm'
 
 const
   FMT = (
@@ -97,6 +98,8 @@ template log*(l: Logit, msg: string, quitMsg = "") =
   l.log(l.defaultLevel, msg, quitMsg)
 
 template log*(l: Logit, level: LogLevel, msg: string, quitMsg = "") =
+  if msg == "": msg = ASSOC[ord(level)].name
+
   let
     dt = now()
     exitMsg =
@@ -122,10 +125,10 @@ template log*(l: Logit, level: LogLevel, msg: string, quitMsg = "") =
     else: quit(1)
   else: file.close()
 
-template expect*(l: Logit, exp: untyped, msg: string) =
+template expect*(l: Logit, exp: untyped, msg = "") =
   if not exp: l.log(LogLevel.ERROR, msg)
 
-template header*(l: Logit, msg: string) =
+template header*(l: Logit, msg = "") =
   let
     dt = now()
     date = dt.format(l.filePrefix)
