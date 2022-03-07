@@ -6,71 +6,108 @@
   Git Repository: https://github.com/Miqueas/Logit
 ]]
 
--- 0x1b: see the Wikipedia link above
+--- 0x1b: see the Wikipedia link above
 local ESC = string.char(27)
-local is_win = package.config:sub(1, 1) == "\\"
+--- From my Gist: https://gist.github.com/Miqueas/53cf4344575ccedbf264010442a21dcc
+os.is_win = package.config:sub(1, 1) == "\\"
 
--- Helper function to create color escape-codes. Read this for more info:
--- https://en.wikipedia.org/wiki/ANSI_escape_code
--- One or more numbers expected
+--- Helper function to create color escape-codes. Read this for more info:
+--- https://en.wikipedia.org/wiki/ANSI_escape_code.
+--- One or more numbers/strings expected
+--- @vararg number | string
+--- @return string
 local function e(...)
   return ESC .. "[" .. table.concat({ ... }, ";") .. "m"
 end
 
--- Return the path to the temp dir
-local function get_temp_dir()
-  if is_win then
+--[[==== PRIVATE ====]]
+
+--- A simple custom version of `assert()` with built-in
+--- `string.format()` support
+--- @generic Expr
+--- @param exp Expr Expression to evaluate
+--- @param msg string Error message to print
+--- @vararg any Additional arguments to format for `msg`
+--- @return Expr
+local function err(exp, msg, ...)
+  local msg = msg:format(...)
+
+  if not exp then
+    return error(msg)
+  end
+
+  return exp
+end
+
+--- Argument type checking function
+--- @generic Any
+--- @generic Type
+--- @param argn number The argument position in function
+--- @param argv Any The argument to check
+--- @param expected Type The type expected (`string`)
+local function check_arg(argn, argv, expected)
+  local argt = type(argv)
+  local msgt = "bad argument #%s, `%s` expected, got `%s`"
+
+  if argt ~= expected then
+    error(msgt:format(argn, expected, argt))
+  end
+end
+
+--- Same as `check_arg()`, except that this don't throw
+--- and error if the argument is `nil`
+--- @generic Any
+--- @generic Type
+--- @param argn number The argument position in function
+--- @param argv Any The argument to check
+--- @param expected Type The type expected (`string`)
+local function opt_arg(argn, argv, expected, default)
+  local argt = type(argv)
+  local msgt = "bad argument #%s, `%s` or `nil` expected, got `%s`"
+
+  if argt ~= expected then
+    if argt == "nil" then
+      return default
+    else
+      error(msgt:format(argn, expected, argt))
+    end
+  end
+end
+
+--- Return the path to the temp dir
+--- @return string
+function io.get_temp_dir()
+  if os.is_win then
     -- Windows. Same as:
     --     os.getenv("TEMP")
     --     os.getenv("TMP")
-    return os.getenv("UserProfile") .. "\\AppData\\Local\\Temp"
+    return os.getenv("UserProfile") .. "/AppData/Local/Temp"
   else
     -- Unix
     return os.getenv("TMPDIR") or "/tmp"
   end
 end
 
--- Return `true` if `path` exists
-local function dir_exists(path)
-  local f = io.open(path)
-  return (f and f:close()) and true or false
-end
+--- Return `true` if `filename` exists
+--- @return boolean
+function io.exists(filename)
+  local ok, _, code = os.rename(filename, filename)
 
--- Appends a / or a \ (depending on the OS) at the end of a path string
-local function dir_normalize(str)
-  str = tostring(str or "")
-
-  if is_win then
-    -- Windows
-    str = (not str:find("%\\+", -1))
-      and str:gsub("/", "\\") .. "\\"
-      or str:gsub("/", "\\")
-  else
-    -- POSIX
-    str = (not str:find("%/+", -1))
-      and str:gsub("\\", "/") .. "/"
-      or str:gsub("\\", "/")
-  end
-
-  return str
-end
-
-function _(s)
-  if s == "OTHER"
-    or s == "TRACE"
-    or s == "DEBUG"
-    or s == "INFO"
-    or s == "WARN"
-    or s == "ERROR"
-    or s == "FATAL"
-  then
+  if code == 13 then
+    -- Permission denied, but it exists
     return true
-  else
-    return false
   end
+
+  return ok ~= nil
 end
 
--- String templates
+--- Check if a directory exists in this path
+--- @return boolean
+function io.is_dir(path)
+  return io.exists(path .. "/")
+end
+
+-- String "templates"
 local FMT = {
   Filename = "%s_%s.log",
   Time = "%H:%M:%S",
@@ -81,101 +118,88 @@ local FMT = {
   },
   Header = {
     File = "\n%s [%s]\n\n",
-    Console = "\n" .. e(2) .. "%s [" .. e(0, 1) .. "%s" .. e(0, 2) .. "]" .. e(0) .. "\n\n"
+    Console = "\n" .. e(2) .. "%s [" .. e(0, 1) .. "%s" .. e(0, 2) .. "]" .. e(0) .. "\n"
   },
   Quit = {
     File = "%s [QUIT]: %s\n",
-    Console = e(2) .. "%s [" .. e(0, 1, 31) .. "QUIT" .. e(0, 2) .. "]: " .. e(0) .. "%s\n"
+    Console = e(2) .. "%s [" .. e(0, 1) .. "%sQUIT" .. e(0, 2) .. "]: " .. e(0) .. "%s\n"
+    --                                      ^~ This one is used for the log level color
   }
 }
 
 local ASSOC = {
-  [0] = { name = "OTHER", color = "30" },
-  [1] = { name = "TRACE", color = "32" },
-  [2] = { name = "DEBUG", color = "36" },
-  [3] = { name = "INFO.", color = "34" },
-  [4] = { name = "WARN.", color = "33" },
-  [5] = { name = "ERROR", color = "31" },
-  [6] = { name = "FATAL", color = "35" },
+  [0] = { name = "OTHER", color = 30 },
+  [1] = { name = "TRACE", color = 32 },
+  [2] = { name = "DEBUG", color = 36 },
+  [3] = { name = "INFO.", color = 34 },
+  [4] = { name = "WARN.", color = 33 },
+  [5] = { name = "ERROR", color = 31 },
+  [6] = { name = "FATAL", color = 35 },
 }
 
--- The Logit class
+--[[==== PUBLIC ====]]
+
+--- @type LogLevel
+--- @class LogLevel
+--- @field OTHER number
+--- @field TRACE number
+--- @field DEBUG number
+--- @field INFO number
+--- @field WARN number
+--- @field ERROR number
+local LogLevel = {}
+LogLevel.OTHER = 0
+LogLevel.TRACE = 1
+LogLevel.DEBUG = 2
+LogLevel.INFO  = 3
+LogLevel.WARN  = 4
+LogLevel.ERROR = 5
+LogLevel.FATAL = 6
+
+--- @type Logit
+--- @class Logit
+--- @field path string
+--- @field namespace string
+--- @field filePrefix string
+--- @field defaultLevel number | LogLevel
+--- @field enableConsole boolean
 local Logit = {}
-
--- Public log levels
-Logit.OTHER = 0
-Logit.TRACE = 1
-Logit.DEBUG = 2
-Logit.INFO  = 3
-Logit.WARN  = 4
-Logit.ERROR = 5
-Logit.FATAL = 6
-
--- Path where log files are saved
-Logit.path = dir_normalize(get_temp_dir())
+Logit.path = io.get_temp_dir()
 Logit.namespace = "Logit"
 Logit.filePrefix = "%Y-%m-%d"
-Logit.defaultLevel = Logit.OTHER
--- By default, Logit don't write logs to the terminal
+Logit.defaultLevel = LogLevel.OTHER
 Logit.enableConsole = false
 
+--- Creates a new instance of `Logit`
+--- @param path string The path where logs will be saved (default is OS temp directory)
+--- @param name string The log namespace (default is `Logit`)
+--- @param level number | LogLevel The default log level (default is `LogLevel.OTHER` (0))
+--- @param console boolean Enable/disable logging to console (default is `false`)
+--- @param prefix string Log file prefix (default is the result of `os.date("%Y-%m-%d")`)
+--- @return Logit
 function Logit:new(path, name, level, console, prefix)
-  local err = "Bad argument #%s to 'new()', '%s' expected, got '%s'"
+  path = opt_arg(1, path, "string", self.path)
+  level = opt_arg(3, level, "number", self.defaultLevel)
 
-  -- Arguments type check
-  do
-    assert(
-      type(path) == "string" or type(path) == "nil",
-      err:format(1, "string", type(path))
-    )
-
-    assert(
-      type(name) == "string" or type(name) == "nil",
-      err:format(2, "string", type(name))
-    )
-
-    assert(
-      type(level) == "number" or type(level) == "nil",
-      err:format(3, "number", type(level))
-    )
-
-    assert(
-      type(console) == "boolean" or type(console) == "nil",
-      err:format(4, "boolean", type(console))
-    )
-
-    assert(
-      type(prefix) == "string" or type(prefix) == "nil",
-      err:format(5, "string", type(prefix))
-    )
+  if level < 0 or level > 6 then
+    err("invalid log level value '%s'", level)
   end
 
   local o = setmetatable({}, { __call = self.log, __index = self })
-  o.namespace = name or self.namespace
-  o.filePrefix = prefix or self.filePrefix
-  o.defaultLevel = level or self.defaultLevel
-  o.enableConsole = console or self.enableConsole
+  o.namespace = opt_arg(2, name, "string", self.namespace)
+  o.filePrefix = opt_arg(5, prefix, "string", self.filePrefix)
+  o.defaultLevel = level
+  o.enableConsole = opt_arg(4, console, "boolean", self.enableConsole)
 
-  -- If 'path' is nil or an empty string, then uses the current
-  -- path for the logs files
-  if not path or #path == 0 then
-    o.path = self.path
-
-  -- Or converts 'path' to a valid path (if exists)
-  elseif path and dir_exists(path) then
-    o.path = dir_normalize(path)
-
-  -- Or stops if the path doesn't exists
-  elseif path and not dir_exists(path) then
-    error("Path '" .. path .. "' doesn't exists or you don't have permissions to use it.")
-  else -- Or... Idk... Unexpected errors can happen!
-    error("Unknown error while checking '" .. path .. "'... (argument #2 in 'new()')")
+  if io.is_dir(path) then
+    o.path = path
+  else
+    err(nil, "'%s' isn't a valid path")
   end
 
-  -- Writes a header at begin of the log
   local date = os.date(o.filePrefix)
   local time = os.date(FMT.Time)
-  local file = io.open(o.path .. FMT.Filename:format(date, o.namespace), "a+")
+  local file = io.open(o.path .. '/' .. FMT.Filename:format(date, o.namespace), "a+")
 
   -- The gsub at the end removes color escape-codes
   file:write(FMT.Header.File:format(time, "GENERATED BY LOGIT, DO NOT EDIT"))
@@ -188,66 +212,53 @@ function Logit:new(path, name, level, console, prefix)
   return o
 end
 
-function Logit:log(lvl, msg, quitMsg, ...)
-  local lvlt = type(lvl)
-  local err = "Bad argument #1 to 'log()', 'number' expected, got '" .. lvlt .. "'"
+--- Makes a log
+--- @param lvl number | LogLevel The log level
+--- @param msg string The message to log
+--- @param quitMsg string An optional message to write if `lvl > 4`
+--- @return nil
+function Logit:log(lvl, msg, quitMsg)
+  check_arg(1, lvl, "number")
+  msg = opt_arg(2, msg, "string", ASSOC[lvl].name)
+  quitMsg = opt_arg(3, quitMsg, "string", msg)
 
-  -- 'lvl' isn't optional anymore and is the first argument needed
-  assert(lvlt == "number", err)
-
-  -- 'log()' assumes that 'msg' is an string
-  msg = tostring(msg or ASSOC[lvl].name)
-  local exitMsg = (quitMsg == "" or type(quitMsg) == "nil")
-    and msg
-    or quitMsg
-
-  -- This prevents that 'Logit.lua' appears in the log message
-  -- when 'expect()' is called.
-  -- Basically it's like the ternary operator in C:
-  --    (exp) ? TRUE : FALSE
+  -- This prevents that 'Logit.lua' appears in the log message when
+  -- `expect` is called
   local info = (debug.getinfo(2, "Sl").short_src:find("(logit.lua)"))
     and debug.getinfo(3, "Sl")
     or debug.getinfo(2, "Sl")
 
-  -- Prevents put different times in the file and the standard output
   local date = os.date(self.filePrefix)
   local time = os.date(FMT.Time)
-  -- The log file
-  local file = io.open(self.path .. FMT.Filename:format(date, self.namespace), "a+")
-  local fout = FMT.Out.File:format(
+  local file = io.open(self.path .. '/' .. FMT.Filename:format(date, self.namespace), "a+")
+
+  file:write(FMT.Out.File:format(
     time,
     self.namespace,
-    -- Name of the type of log
     ASSOC[lvl].name,
-    -- Source file from 'log()' is called
-    info.short_src, -- Line where is called
+    info.short_src,
     info.currentline,
-    msg:format(...)
-  )
-
-  -- The '\n' makes logs divide by lines instead of accumulating
-  file:write(fout)
+    msg
+  ))
 
   if self.enableConsole then
-    local cout = FMT.Out.Console:format(
+    print(FMT.Out.Console:format(
       time,
       self.namespace,
-      -- Uses the correct color for differents logs
       e(ASSOC[lvl].color),
       ASSOC[lvl].name,
       info.short_src,
       info.currentline,
-      msg:format(...)
-    )
-    print(cout)
+      msg
+    ))
   end
 
   if lvl > 4 then
-    file:write(FMT.Quit.File:format(time, exitMsg))
+    file:write(FMT.Quit.File:format(time, quitMsg))
     file:close()
 
     if self.enableConsole then
-      print(FMT.Quit.Console:format(time, exitMsg))
+      print(FMT.Quit.Console:format(time, quitMsg))
     end
 
     -- For Love2D compatibility
@@ -257,17 +268,24 @@ function Logit:log(lvl, msg, quitMsg, ...)
   else file:close() end
 end
 
-function Logit:expect(exp, msg, quitMsg, ...)
-  -- 'expect()' is mainly for errors
+--- Like `assert`, but this automatically logs `msg`
+--- @generic Expr
+--- @param exp Expr The expression to evaluate
+--- @param msg string The log message if fails
+--- @return Expr
+function Logit:expect(exp, msg)
   if not exp then
-    self:log(self.ERROR, msg, quitMsg, ...)
+    self:log(LogLevel.ERROR, msg)
   else
     return exp
   end
 end
 
--- Write a log "header". Can be useful if you want to separate some logs
--- or create "breakpoints", etc...
+--- Write a "header". Can be useful if you want to separate some logs
+--- or create "breakpoints". This method supports `string.format`, so
+--- you can pass a set of additional arguments to format `msg`
+--- @param msg string The message to log
+--- @return nil
 function Logit:header(msg, ...)
   if type(msg) == "string" and #msg > 0 then
     msg = msg:format(...)
