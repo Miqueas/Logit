@@ -9,8 +9,12 @@ logger(TRACE, "T")
 logger(DEBUG, "D")
 logger(INFO, "I")
 logger(WARN, "W")
+
 logger.header("hello")
 logger.expect(29 < 30, "Expected 29 < 30")
+
+logger()
+
 logger(ERROR, "E")
 # Never runs
 logger(FATAL, "F")
