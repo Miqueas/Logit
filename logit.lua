@@ -72,6 +72,8 @@ local function opt_arg(argn, argv, expected, default)
       error(msgt:format(argn, expected, argt))
     end
   end
+
+  return argv
 end
 
 --- Return the path to the temp dir
@@ -104,7 +106,11 @@ end
 --- Check if a directory exists in this path
 --- @return boolean
 function io.is_dir(path)
-  return io.exists(path .. "/")
+  if os.is_win then
+    return io.exists(path .. "/")
+  end
+
+  return (io.open(path .. "/") == nil) and false or true
 end
 
 -- String "templates"
@@ -139,41 +145,37 @@ local ASSOC = {
 
 --[[==== PUBLIC ====]]
 
---- @type LogLevel
---- @class LogLevel
+--- @type Logit
+--- @class Logit
+--- @field path string
+--- @field namespace string
+--- @field filePrefix string
+--- @field defaultLevel number
+--- @field enableConsole boolean
 --- @field OTHER number
 --- @field TRACE number
 --- @field DEBUG number
 --- @field INFO number
 --- @field WARN number
 --- @field ERROR number
-local LogLevel = {}
-LogLevel.OTHER = 0
-LogLevel.TRACE = 1
-LogLevel.DEBUG = 2
-LogLevel.INFO  = 3
-LogLevel.WARN  = 4
-LogLevel.ERROR = 5
-LogLevel.FATAL = 6
-
---- @type Logit
---- @class Logit
---- @field path string
---- @field namespace string
---- @field filePrefix string
---- @field defaultLevel number | LogLevel
---- @field enableConsole boolean
 local Logit = {}
+Logit.OTHER = 0
+Logit.TRACE = 1
+Logit.DEBUG = 2
+Logit.INFO  = 3
+Logit.WARN  = 4
+Logit.ERROR = 5
+Logit.FATAL = 6
 Logit.path = io.get_temp_dir()
 Logit.namespace = "Logit"
 Logit.filePrefix = "%Y-%m-%d"
-Logit.defaultLevel = LogLevel.OTHER
+Logit.defaultLevel = Logit.OTHER
 Logit.enableConsole = false
 
 --- Creates a new instance of `Logit`
 --- @param path string The path where logs will be saved (default is OS temp directory)
 --- @param name string The log namespace (default is `Logit`)
---- @param level number | LogLevel The default log level (default is `LogLevel.OTHER` (0))
+--- @param level number The default log level (default is `Logit.OTHER` (0))
 --- @param console boolean Enable/disable logging to console (default is `false`)
 --- @param prefix string Log file prefix (default is the result of `os.date("%Y-%m-%d")`)
 --- @return Logit
@@ -194,7 +196,7 @@ function Logit:new(path, name, level, console, prefix)
   if io.is_dir(path) then
     o.path = path
   else
-    err(nil, "'%s' isn't a valid path")
+    err(nil, "'%s' isn't a valid path", path)
   end
 
   local date = os.date(o.filePrefix)
@@ -213,7 +215,7 @@ function Logit:new(path, name, level, console, prefix)
 end
 
 --- Makes a log
---- @param lvl number | LogLevel The log level
+--- @param lvl number The log level
 --- @param msg string The message to log
 --- @param quitMsg string An optional message to write if `lvl > 4`
 --- @return nil
@@ -258,7 +260,7 @@ function Logit:log(lvl, msg, quitMsg)
     file:close()
 
     if self.enableConsole then
-      print(FMT.Quit.Console:format(time, quitMsg))
+      print(FMT.Quit.Console:format(time, e(ASSOC[lvl].color), quitMsg))
     end
 
     -- For Love2D compatibility
@@ -275,7 +277,7 @@ end
 --- @return Expr
 function Logit:expect(exp, msg)
   if not exp then
-    self:log(LogLevel.ERROR, msg)
+    self:log(Logit.ERROR, msg)
   else
     return exp
   end
@@ -296,10 +298,8 @@ function Logit:header(msg, ...)
     file:write(FMT.Header.File:format(time, msg))
     file:close()
 
-    if self.enableConsole then print(FMT.Header.File:format(time, msg)) end
+    if self.enableConsole then print(FMT.Header.Console:format(time, msg)) end
   end
 end
 
-return setmetatable(Logit, {
-  __call = Logit.new,
-})
+return Logit
