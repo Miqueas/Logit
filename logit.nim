@@ -50,8 +50,8 @@ const
   ASSOC = [
     ( name: "OTHER", color: 30 ),
     ( name: "TRACE", color: 32 ),
-    ( name: "DEBUG", color: 36 ),
     ( name: "INFO.", color: 34 ),
+    ( name: "DEBUG", color: 36 ),
     ( name: "WARN.", color: 33 ),
     ( name: "ERROR", color: 31 ),
     ( name: "FATAL", color: 35 )

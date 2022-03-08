@@ -1,7 +1,7 @@
-import ../logit
+import logit
 from std/os import getCurrentDir
 
-let logger = newLogit(path = getCurrentDir(), name = "Test", console = true)
+let logger = newLogit(path = getCurrentDir(), name = "TEST", console = true)
 
 # Uses default logging level
 logger("hello!")
