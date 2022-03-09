@@ -81,20 +81,6 @@ proc prepare*(self: var Logit) {.raises: [IOError, ValueError].} =
   if self.enableConsole:
     echo FMT.Header.Console.format(time, "LOGGING LIBRARY STARTED")
 
-## Creates a new `Logit` using default values
-proc initLogit*(): Logit {.raises: [IOError, ValueError].} =
-  var self = Logit(
-    path: getTempDir(),
-    autoExit: true,
-    namespace: "Logit",
-    filePrefix: initTimeFormat("YYYY-MM-dd"),
-    defaultLevel: OTHER,
-    enableConsole: false
-  )
-
-  self.prepare()
-  return self
-
 ## Creates a new `Logit` using the given properties
 ## or default values if not arguments given
 proc initLogit*(path = getTempDir(),
