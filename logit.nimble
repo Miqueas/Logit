@@ -1,5 +1,5 @@
 # Package
-version      = "6.0.0"
+version      = "6.0.1"
 author       = "Miqueas Martinez"
 description  = "Dependency-free, cross-platform and small logging library for Lua and Nim, with a simple and comfortable API"
 license      = "Zlib"
