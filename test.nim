@@ -1,5 +1,5 @@
 import logit
-from std/os import getCurrentDir, getTempDir
+from std/os import getCurrentDir
 
 var logger = initLogit(getCurrentDir(), "TEST", console = true, exit = false)
 
