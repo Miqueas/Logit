@@ -148,7 +148,7 @@ template log*(self: Logit, lvl: LogLevel, logMsg = "", quitMsg = "") =
 template expect*(self: Logit, exp: untyped, msg = "", quitMsg = "") =
   if not exp: self.log(ERROR, msg, quitMsg)
 
-template header*(self: Logit, msg = "") =
+proc header*(self: Logit, msg = "") =
   let time = now().format(FMT.Time)
   
   self.file.write(FMT.Header.File.format(time, msg))
