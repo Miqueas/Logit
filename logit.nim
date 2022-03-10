@@ -46,7 +46,6 @@ let
 #[======== Public ========]#
 
 type
-  ## Supported logging levels
   LogLevel* = enum
     OTHER,
     TRACE,
@@ -55,7 +54,7 @@ type
     WARN,
     ERROR,
     FATAL
-  ## Logit object, used to hold some data for the logs
+
   Logit* = object
     file: File
     path: string
@@ -65,9 +64,9 @@ type
     defaultLevel*: LogLevel
     enableConsole*: bool
 
-## Prepares Logit for logging using the given `Logit` instance.
-## This function assumes that `Logit` has everything ready to
-## start logging, that means you must have set the `path` property
+# Prepares Logit for logging using the given `Logit` instance.
+# This function assumes that `Logit` has everything ready to
+# start logging, that means you must have set the `path` property
 proc prepare*(self: var Logit) {.raises: [IOError, ValueError].} =
   let
     dt = now()
@@ -81,8 +80,9 @@ proc prepare*(self: var Logit) {.raises: [IOError, ValueError].} =
   if self.enableConsole:
     echo FMT.Header.Console.format(time, "LOGGING LIBRARY STARTED")
 
-## Creates a new `Logit` using the given properties
-## or default values if not arguments given
+# Creates a new `Logit` using the given properties
+# or fallback to default values if not arguments
+# given
 proc initLogit*(path = getTempDir(),
                 name = "Logit",
                 lvl = OTHER,
@@ -106,15 +106,6 @@ proc initLogit*(path = getTempDir(),
   return self
 
 # Logging API
-template `()`*(self: Logit, msg = "", quitMsg = "") =
-  self.log(self.defaultLevel, msg, quitMsg)
-
-template `()`*(self: Logit, lvl: LogLevel, msg = "", quitMsg = "") =
-  self.log(lvl, msg, quitMsg)
-
-template log*(self: Logit, msg = "", quitMsg = "") =
-  self.log(self.defaultLevel, msg, quitMsg)
-
 template log*(self: Logit, lvl: LogLevel, logMsg = "", quitMsg = "") =
   let
     time = now().format(FMT.Time)
@@ -145,9 +136,22 @@ template log*(self: Logit, lvl: LogLevel, logMsg = "", quitMsg = "") =
     else:
       quit(1)
 
-template expect*(self: Logit, exp: untyped, msg = "", quitMsg = "") =
+# Some "shortcuts"
+template log*(self: Logit, msg = "", quitMsg = "") =
+  self.log(self.defaultLevel, msg, quitMsg)
+
+template `()`*(self: Logit, msg = "", quitMsg = "") =
+  self.log(self.defaultLevel, msg, quitMsg)
+
+template `()`*(self: Logit, lvl: LogLevel, msg = "", quitMsg = "") =
+  self.log(lvl, msg, quitMsg)
+
+# Automatically logs an error if `exp` is `false`. If autoExit is
+# `false` you may don't need to use this proc
+proc expect*(self: Logit, exp: bool, msg = "", quitMsg = "") =
   if not exp: self.log(ERROR, msg, quitMsg)
 
+# Writes a "header"
 proc header*(self: Logit, msg = "") =
   let time = now().format(FMT.Time)
   
@@ -156,6 +160,8 @@ proc header*(self: Logit, msg = "") =
   if self.enableConsole:
     echo FMT.Header.Console.format(time, msg)
 
+# Closes the internal file. Call this proc if you're sure you'll
+# not need to use a `Logit` instance
 proc done*(self: var Logit) {.inline.} =
   self.file.close()
 
