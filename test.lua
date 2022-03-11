@@ -1,6 +1,6 @@
 local logit = require("logit")
 
-local log = logit:new(nil, "TEST", nil, true, false)
+local log = logit:new("./", "TEST", nil, true, false)
 
 log(nil, "hello!")
 log(logit.TRACE, "this seems to be working fine :)")
