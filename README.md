@@ -4,6 +4,8 @@
 
 Dependency-free, cross-platform and small logging library for Lua and Nim, with a simple and comfortable API.
 
+![logit capture](capture.png)
+
 ## Installation
 
 For Nim, just:
