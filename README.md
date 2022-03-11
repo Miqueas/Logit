@@ -4,7 +4,7 @@
 
 Dependency-free, cross-platform and small logging library for Lua and Nim, with a simple and comfortable API.
 
-![logit capture](capture.png)
+![logit capture](https://github.com/Miqueas/Logit/raw/main/capture.png)
 
 ## Installation
 
@@ -16,7 +16,7 @@ nimble install logit
 
 ## Documentation
 
-For Nim, check out [this](NimDocs.md).
+For Nim, check out [this](https://github.com/Miqueas/Logit/blob/main/NimDocs.md).
 
 [LicenseBadge]: https://img.shields.io/badge/License-Zlib-brightgreen?style=flat
 [LicenseURL]: https://opensource.org/licenses/Zlib
