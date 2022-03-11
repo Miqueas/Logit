@@ -1,15 +1,21 @@
 local logit = require("logit")
-local logger = logit:new("./", "TEST", nil, true)
 
-logger(logit.OTHER, "O")
-logger(logit.TRACE, "T")
-logger(logit.DEBUG, "D")
-logger(logit.INFO, "I")
-logger(logit.WARN, "W")
+local log = logit:new(nil, "TEST", nil, true, false)
 
-logger:header("hello there, this is a header :p")
-logger:expect(2 < 4, "2 isn't minor than 4!!!!!!!!")
+log(nil, "hello!")
+log(logit.TRACE, "this seems to be working fine :)")
+log(logit.INFO, "this is an info message")
+log(logit.DEBUG, "this is a debug message")
+log(logit.WARN, "be careful 🔥")
 
-logger(logit.ERROR, "E")
+log:header("hello there, this is a header :p")
+log:expect(29 > 30, "expected 29 > 30")
+log:expect(false, "expected `true`", 6)
+
+log(logit.ERROR, "something went wrong!!!")
 -- Never runs
-logger(logit.FATAL, "F")
+log(logit.FATAL, "O H   M Y   G O D N E S S")
+log:done()
+
+p(logit)
+p(log)
