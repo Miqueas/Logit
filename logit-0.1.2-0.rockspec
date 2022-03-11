@@ -16,5 +16,5 @@ dependencies = { "lua >= 5.1" }
 
 build = {
   type = "builtin",
-  modules = { logit = "src/logit.lua" }
+  modules = { logit = "logit.lua" }
 }
