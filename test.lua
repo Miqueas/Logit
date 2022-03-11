@@ -16,6 +16,3 @@ log(logit.ERROR, "something went wrong!!!")
 -- Never runs
 log(logit.FATAL, "O H   M Y   G O D N E S S")
 log:done()
-
-p(logit)
-p(log)
