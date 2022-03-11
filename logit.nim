@@ -148,8 +148,8 @@ template `()`*(self: Logit, lvl: LogLevel, msg = "", quitMsg = "") =
 
 # Automatically logs an error if `exp` is `false`. If autoExit is
 # `false` you may don't need to use this proc
-proc expect*(self: Logit, exp: bool, msg = "", quitMsg = "") =
-  if not exp: self.log(ERROR, msg, quitMsg)
+template expect*(self: Logit, exp: bool, msg = "", lvl = ERROR, quitMsg = ""): untyped =
+  if not exp: self.log(lvl, msg, quitMsg)
 
 # Writes a "header"
 proc header*(self: Logit, msg = "") =
