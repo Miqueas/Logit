@@ -51,15 +51,30 @@ Logit exports an small set of things
     - `param logMsg: string = ""` &ndash; the log message
     - `param quitMsg: string = ""` &ndash; an optional message to write if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
   * `template log` &ndash; same as the above `log`, but uses `defaultLevel` as log level
-    - `param self: Logit` &ndash; same as in `log`
-    - `param msg: string = ""` &ndash; same as in `log`
-    - `param quitMsg: string = ""` &ndash; same as in `log`
+    - `param self: Logit` &ndash; your `Logit` instance
+    - `param msg: string = ""` &ndash; the log message
+    - `param quitMsg: string = ""` &ndash; an optional message to write if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
   * `template ()` &ndash; `callOperator` for `Logit`, internally calls `log`
-    - `param self: Logit` &ndash; same as in `log`
-    - `param lvl: LogLevel` &ndash; same as in `log`
-    - `param msg: string = ""` &ndash; same as in `log`
-    - `param quitMsg: string = ""` &ndash; same as in `log`
+    - `param self: Logit` &ndash; your `Logit` instance
+    - `param lvl: LogLevel` &ndash; the log level
+    - `param msg: string = ""` &ndash; the log message
+    - `param quitMsg: string = ""` &ndash; an optional message to write if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
   * `template ()` &ndash; `callOperator` for `Logit`, internally calls `log` with `defaultLevel` as log level
-    - `param self: Logit` &ndash; same as in `log`
-    - `param msg: string = ""` &ndash; same as in `log`
-    - `param quitMsg: string = ""` &ndash; same as in `log`
+    - `param self: Logit` &ndash; your `Logit` instance
+    - `param msg: string = ""` &ndash; the log message
+    - `param quitMsg: string = ""` &ndash; an optional message to write if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
+  * `template expect` &ndash; calls `log` with level `lvl` (or `ERROR` if no level given) if the given "expression" `exp` is `false`, if `autoExit` is enabled, the program will terminate
+    - `param self: Logit` &ndash; your `Logit` instance
+    - `param exp: bool` &ndash; the "expression" to evaluate
+    - `param msg: string = ""` &ndash; the log message
+    - `param lvl: LogLevel = ERROR` &ndash; the log level, but defaults to `ERROR`
+    - `param quitMsg: string = ""` &ndash; an optional message to write if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
+  * `proc header` &ndash; writes a "header"
+    - `param self: Logit` &ndash; your `Logit` instance
+    - `param msg: string = ""` &ndash; the header message
+  * `proc done` &ndash; closes the internal file
+    - `param self: var Logit` &ndash; your `Logit` instance
+  * `proc path` &ndash; getter for `path` property
+    - `param self: Logit` &ndash; your `Logit` instance
+  * `proc path=` &ndash; setter for `path` property
+    - `param self: var Logit` &ndash; your `Logit` instance
