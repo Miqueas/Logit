@@ -64,8 +64,7 @@ Definition:
       - **Required?**: no
       - **Default**: `"%Y-%m-%d"`
 
-This method can throw an error if `path` isn't valid or doesn't exists.
-`prefix` must be a valid string (check out `os.date` doc).
+This method can throw an error if `path` isn't valid or doesn't exists and `prefix` must be a valid string (check out `os.date` doc).
 
 ### `method Logit:log`
 
@@ -84,8 +83,7 @@ Definition:
     - `param ...` &ndash; varargs to use for `msg`
       - **Required?**: only if you're going to format `msg`
 
-If `msg` is `nil`, the log level will be the message (by example, "INFO" for `INFO`).
-If `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`, `quitMsg` will be used as a final "exit" message to quit the program.
+If `msg` is `nil`, the log level will be the message (by example, "INFO" for `INFO`). `quitMsg` is used as final log message if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
 
 ### `method Logit:expect -> Expr`
 
@@ -106,7 +104,7 @@ Definition:
     - `param ...` &ndash; varargs to use for `msg`
       - **Required?**: only if you're going to format `msg`
 
-If `exp` isn't `false` or `nil`, then returns it.
+If `exp` isn't `false` or `nil`, then returns it. This method maybe useless if `autoExit` is disabled, since was made mainly for errors.
 
 ### `method Logit:header`
 
