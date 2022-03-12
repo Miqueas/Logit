@@ -15,7 +15,7 @@ from std/strutils import join, format
 
 proc e(n: varargs[int]): string = return '\e' & '[' & join(n, ";") & 'm'
 
-let
+const
   FMT = (
     Filename: "$1_$2.log",
     Time: "HH:mm:ss",
@@ -152,6 +152,7 @@ template log*(self: Logit, lvl: LogLevel, logMsg = "", quitMsg = "") =
       quit(1)
 
 # Some "shortcuts"
+{.push inline.}
 template log*(self: Logit, msg = "", quitMsg = "") =
   self.log(self.defaultLevel, msg, quitMsg)
 
@@ -160,6 +161,7 @@ template `()`*(self: Logit, msg = "", quitMsg = "") =
 
 template `()`*(self: Logit, lvl: LogLevel, msg = "", quitMsg = "") =
   self.log(lvl, msg, quitMsg)
+{.pop.}
 
 # Automatically logs an error if `exp` is `false`. If autoExit is
 # `false` you may don't need to use this proc
@@ -185,7 +187,7 @@ proc path*(self: Logit): string {.inline.} =
   return self.path
 
 # Setter for `path`
-proc `path=`*(self: var Logit, newPath: string) {.raises: [IOError, ValueError], inline.} =
+proc `path=`*(self: var Logit, newPath: string) {.raises: [IOError, ValueError].} =
   if not dirExists(newPath):
     raise newException(IOError, fmt"`{newPath}` isn't a valid path or doesn't exists")
   self.path = newPath
