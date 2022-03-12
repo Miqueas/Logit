@@ -180,10 +180,11 @@ proc header*(self: Logit, msg: string) =
 proc done*(self: var Logit) {.inline.} =
   self.file.close()
 
-# Setters and Getters
+# Getter for `path`
 proc path*(self: Logit): string {.inline.} =
   return self.path
 
+# Setter for `path`
 proc `path=`*(self: var Logit, newPath: string) {.raises: [IOError, ValueError], inline.} =
   if not dirExists(newPath):
     raise newException(IOError, fmt"`{newPath}` isn't a valid path or doesn't exists")
