@@ -1,8 +1,8 @@
 package = "logit"
-version = "0.1.3-0"
+version = "0.1.5-0"
 source  = {
   url = "git://github.com/Miqueas/Logit",
-  tag = "v0.1.3"
+  tag = "v0.1.5"
 }
 
 description = {
