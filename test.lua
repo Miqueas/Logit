@@ -13,6 +13,5 @@ log:expect(29 > 30, "expected 29 > 30")
 log:expect(false, "expected `true`", logit.FATAL)
 
 log(logit.ERROR, "something went wrong!!!")
--- Never runs
 log(logit.FATAL, "O H   M Y   G O D N E S S")
 log:done()

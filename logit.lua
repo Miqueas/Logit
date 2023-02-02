@@ -12,7 +12,7 @@ local ESC = string.char(27)
 --- From my Gist: https://gist.github.com/Miqueas/53cf4344575ccedbf264010442a21dcc:
 --- `true` if OS is Windows, `false` otherwise
 --- @type boolean
-os.isWin = package.config:sub(1, 1) == "\\"
+local isWin = package.config:sub(1, 1) == "\\"
 
 --- Helper function to create color escape-codes. Read this for more info:
 --- https://en.wikipedia.org/wiki/ANSI_escape_code.
@@ -82,26 +82,16 @@ local function opt_arg(argn, argv, expected, default)
 end
 
 --- From my Gist: https://gist.github.com/Miqueas/53cf4344575ccedbf264010442a21dcc:
---- Return the path to the temp dir
---- @return string
-function os.get_temp_dir()
-  if os.isWin then
-    -- Windows. Same as:
-    --     os.getenv("TEMP")
-    --     os.getenv("TMP")
-    return os.getenv("UserProfile") .. "/AppData/Local/Temp"
-  else
-    -- Unix
-    return os.getenv("TMPDIR") or "/tmp"
-  end
-end
+--- Path to the temp directory
+--- @type string
+local tempDir = isWin and os.getenv("UserProfile") .. "/AppData/Local/Temp" or "/tmp"
 
 --- From my Gist: https://gist.github.com/Miqueas/53cf4344575ccedbf264010442a21dcc:
 --- Return `true` if `filename` exists
---- @param filename string The path to the file
+--- @param path string The path to the file
 --- @return boolean
-function os.exists(filename)
-  local ok, _, code = os.rename(filename, filename)
+local function pathExists(path)
+  local ok, _, code = os.rename(path, path)
 
   if code == 13 then
     -- Permission denied, but it exists
@@ -114,9 +104,9 @@ end
 --- From my Gist: https://gist.github.com/Miqueas/53cf4344575ccedbf264010442a21dcc:
 --- Check if a directory exists in this path
 --- @return boolean
-function os.is_dir(path)
-  if os.isWin then
-    return os.exists(path .. "/")
+local function isDir(path)
+  if isWin then
+    return pathExists(path .. "/")
   end
 
   return (io.open(path .. "/") == nil) and false or true
@@ -183,7 +173,7 @@ Logit.WARN  = 4
 Logit.ERROR = 5
 Logit.FATAL = 6
 
-Logit.path = os.get_temp_dir()
+Logit.path = tempDir
 Logit.autoExit = true
 Logit.namespace = "Logit"
 Logit.filePrefix = "%Y-%m-%d"
@@ -203,7 +193,7 @@ function Logit:new(path, name, lvl, console, exit, prefix)
   lvl = opt_arg(3, lvl, "number", self.defaultLevel)
 
   err(not (lvl < 0 or lvl > 6), "invalid log level '%s'", lvl)
-  err(os.is_dir(path), "'%s' isn't a valid path or doesn't exists", path)
+  err(isDir(path), "'%s' isn't a valid path or doesn't exists", path)
 
   local o = setmetatable({}, { __call = self.log, __index = self })
   o.path = path
