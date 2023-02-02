@@ -10,7 +10,7 @@ log(logit.WARN, "be careful 🔥")
 
 log:header("hello there, this is a header :p")
 log:expect(29 > 30, "expected 29 > 30")
-log:expect(false, "expected `true`", 6)
+log:expect(false, "expected `true`", logit.FATAL)
 
 log(logit.ERROR, "something went wrong!!!")
 -- Never runs

@@ -15,6 +15,5 @@ log.expect(29 > 30, "expected 29 > 30")
 log.expect(false, "expected `true`", lvl = FATAL)
 
 log(ERROR, "something went wrong!!!")
-# Never runs
 log(FATAL, "O H   M Y   G O D N E S S")
 log.done()
