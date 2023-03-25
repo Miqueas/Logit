@@ -20,18 +20,18 @@ const
     Filename: "$1_$2.log",
     Time: "HH:mm:ss",
     Out: (
-      File: "$1 [$2 $3] $4@$5: $6\n",
-      Console: e(2) & "$1 [" & e(0,1) & "$2 $3$4" & e(0,2) & "] $5@$6:" & e(0) & " $7"
-      #                                     ^~ This one is used for the log level color
+      File: "$1 [$2 $3] $4:$5 $6\n",
+      Console: fmt"{e(2)}$1 [{e(0,1)}$2 $3$4{e(0,2)}] $5:$6{e(0)} $7"
+      #                                 ^~ This one is used for the log level color
     ),
     Header: (
       File: "\n$1 [$2]\n\n",
-      Console: '\n' & e(2) & "$1 [" & e(0, 1) & "$2" & e(0, 2) & "]" & e(0) & '\n'
+      Console: '\n' & fmt"{e(2)}$1 [{e(0, 1)}$2{e(0, 2)}]{e(0)}" & '\n'
     ),
     Quit: (
-      File: "$1 [QUIT]: $2\n",
-      Console: e(2) & "$1 [" & e(0, 1) & "$2QUIT" & e(0, 2) & "]: " & e(0) & "$3\n"
-      #                                   ^~ This one is used for the log level color
+      File: "$1 [EXIT]\n",
+      Console: fmt"{e(2)}$1 [{e(0, 1)}$2EXIT{e(0, 2)}]{e(0)}"
+      #                               ^~ This one is used for the log level color
     )
   )
 
@@ -112,9 +112,6 @@ template log*(self: Logit, lvl: LogLevel, logMsg = "", quitMsg = "") =
     msg =
       if logMsg == "": ASSOC[ord(lvl)].name
       else: logMsg
-    exitMsg =
-      if quitMsg == "": msg
-      else: quitMsg
     info = instantiationInfo(0)
 
   self.file.write(FMT.Out.File.format(
@@ -138,11 +135,11 @@ template log*(self: Logit, lvl: LogLevel, logMsg = "", quitMsg = "") =
     )
 
   if ord(lvl) > 4 and self.autoExit:
-    self.file.write(FMT.Quit.File.format(time, exitMsg))
+    self.file.write(FMT.Quit.File.format(time))
     self.file.close()
 
     if self.enableConsole:
-      quit(FMT.Quit.Console.format(time, e(ASSOC[ord(lvl)].color), exitMsg), 1)
+      quit(FMT.Quit.Console.format(time, e(ASSOC[ord(lvl)].color)), 1)
     else:
       quit(1)
 

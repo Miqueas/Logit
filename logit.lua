@@ -117,8 +117,8 @@ local FMT = {
   Filename = "%s_%s.log",
   Time = "%H:%M:%S",
   Out = {
-    File = "%s [%s %s] %s@%s: %s\n",
-    Console = e(2) .. "%s [" .. e(0, 1) .. "%s %s%s" .. e(0, 2) .. "] %s@%s:" .. e(0) .. " %s"
+    File = "%s [%s %s] %s:%s %s\n",
+    Console = e(2) .. "%s [" .. e(0, 1) .. "%s %s%s" .. e(0, 2) .. "] %s:%s" .. e(0) .. " %s"
     --                                         ^~ This one is used for the log level color
   },
   Header = {
@@ -126,8 +126,8 @@ local FMT = {
     Console = "\n" .. e(2) .. "%s [" .. e(0, 1) .. "%s" .. e(0, 2) .. "]" .. e(0) .. "\n"
   },
   Quit = {
-    File = "%s [QUIT]: %s\n",
-    Console = e(2) .. "%s [" .. e(0, 1) .. "%sQUIT" .. e(0, 2) .. "]: " .. e(0) .. "%s\n"
+    File = "%s [EXIT]\n",
+    Console = e(2) .. "%s [" .. e(0, 1) .. "%sEXIT" .. e(0, 2) .. "]" .. e(0) .. "\n"
     --                                      ^~ This one is used for the log level color
   }
 }
@@ -158,7 +158,7 @@ local FILE
 --- @field ERROR number
 --- @field FATAL number
 --- @field path string
---- @field autoExit boolean
+--- @field autoSTOP boolean
 --- @field namespace string
 --- @field filePrefix string
 --- @field defaultLevel number
@@ -174,7 +174,7 @@ Logit.ERROR = 5
 Logit.FATAL = 6
 
 Logit.path = tempDir
-Logit.autoExit = true
+Logit.autoSTOP = true
 Logit.namespace = "Logit"
 Logit.filePrefix = "%Y-%m-%d"
 Logit.defaultLevel = Logit.OTHER
@@ -185,10 +185,10 @@ Logit.enableConsole = false
 --- @param name string The log namespace (default is `Logit`)
 --- @param lvl number The default log level (default is `Logit.OTHER` (0))
 --- @param console boolean Enable/disable logging to console (default is `false`)
---- @param exit boolean Enable/disable automatically quit application (default is `true`)
+--- @param STOP boolean Enable/disable automatically quit application (default is `true`)
 --- @param prefix string Log file prefix (default is the result of `os.date("%Y-%m-%d")`)
 --- @return Logit
-function Logit:new(path, name, lvl, console, exit, prefix)
+function Logit:new(path, name, lvl, console, STOP, prefix)
   path = opt_arg(1, path, "string", self.path)
   lvl = opt_arg(3, lvl, "number", self.defaultLevel)
 
@@ -197,7 +197,7 @@ function Logit:new(path, name, lvl, console, exit, prefix)
 
   local o = setmetatable({}, { __call = self.log, __index = self })
   o.path = path
-  o.autoExit = opt_arg(5, exit, "boolean", self.autoExit)
+  o.autoSTOP = opt_arg(5, STOP, "boolean", self.autoSTOP)
   o.namespace = opt_arg(2, name, "string", self.namespace)
   o.filePrefix = opt_arg(6, prefix, "string", self.filePrefix)
   o.defaultLevel = lvl
@@ -215,12 +215,10 @@ end
 --- Makes a log
 --- @param lvl number The log level
 --- @param msg string The message to log
---- @param quitMsg string An optional message to write if `lvl > 4`
 --- @return nil
-function Logit:log(lvl, msg, quitMsg, ...)
+function Logit:log(lvl, msg, ...)
   lvl = opt_arg(1, lvl, "number", self.defaultLevel)
   msg = opt_arg(2, msg, "string", ASSOC[lvl].name):format(...)
-  quitMsg = opt_arg(3, quitMsg, "string", msg)
 
   -- This prevents that 'Logit.lua' appears in the log message when
   -- `expect` is called
@@ -251,12 +249,12 @@ function Logit:log(lvl, msg, quitMsg, ...)
     ))
   end
 
-  if lvl > 4 and self.autoExit then
-    FILE:write(FMT.Quit.File:format(time, quitMsg))
+  if lvl > 4 and self.autoSTOP then
+    FILE:write(FMT.Quit.File:format(time))
     FILE:close()
 
     if self.enableConsole then
-      print(FMT.Quit.Console:format(time, e(ASSOC[lvl].color), quitMsg))
+      print(FMT.Quit.Console:format(time, e(ASSOC[lvl].color)))
     end
 
     -- For Love2D compatibility
@@ -271,13 +269,12 @@ end
 --- @param exp Expr The expression to evaluate
 --- @param msg string The log message if fails
 --- @return Expr
-function Logit:expect(exp, msg, lvl, quitMsg, ...)
-  msg = opt_arg(2, msg, "string")
+function Logit:expect(exp, msg, lvl, ...)
+  msg = opt_arg(2, msg, "string", "expected condition failed")
   lvl = opt_arg(3, lvl, "number", Logit.ERROR)
-  quitMsg = opt_arg(4, quitMsg, "string")
 
   if not exp then
-    self:log(lvl, msg, quitMsg, ...)
+    self:log(lvl, msg, ...)
   end
 
   return exp
