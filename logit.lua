@@ -185,10 +185,10 @@ Logit.enableConsole = false
 --- @param name string The log namespace (default is `Logit`)
 --- @param lvl number The default log level (default is `Logit.OTHER` (0))
 --- @param console boolean Enable/disable logging to console (default is `false`)
---- @param STOP boolean Enable/disable automatically quit application (default is `true`)
+--- @param exit boolean Enable/disable automatically quit application (default is `true`)
 --- @param prefix string Log file prefix (default is the result of `os.date("%Y-%m-%d")`)
 --- @return Logit
-function Logit:new(path, name, lvl, console, STOP, prefix)
+function Logit:new(path, name, lvl, console, exit, prefix)
   path = opt_arg(1, path, "string", self.path)
   lvl = opt_arg(3, lvl, "number", self.defaultLevel)
 
@@ -197,7 +197,7 @@ function Logit:new(path, name, lvl, console, STOP, prefix)
 
   local o = setmetatable({}, { __call = self.log, __index = self })
   o.path = path
-  o.autoSTOP = opt_arg(5, STOP, "boolean", self.autoSTOP)
+  o.autoSTOP = opt_arg(5, exit, "boolean", self.autoSTOP)
   o.namespace = opt_arg(2, name, "string", self.namespace)
   o.filePrefix = opt_arg(6, prefix, "string", self.filePrefix)
   o.defaultLevel = lvl
@@ -268,9 +268,10 @@ end
 --- @generic Expr
 --- @param exp Expr The expression to evaluate
 --- @param msg string The log message if fails
+--- @param lvl number The log level (default = ERROR)
 --- @return Expr
-function Logit:expect(exp, msg, lvl, ...)
-  msg = opt_arg(2, msg, "string", "expected condition failed")
+function Logit:test(exp, msg, lvl, ...)
+  msg = opt_arg(2, msg, "string", "given expression went wrong")
   lvl = opt_arg(3, lvl, "number", Logit.ERROR)
 
   if not exp then
