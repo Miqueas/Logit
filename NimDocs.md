@@ -1,186 +1,151 @@
 # Usage
 
-A very simple example
+A very simple example:
 
 ```nim
 import logit
 from std/os import getCurrentDir
 
 var log = initLogit(getCurrentDir(), "MyApp")
+log.start()
 
 log(INFO, "application started")
-# your code...
 
-log.done()
+# Some code here...
+
+log.finish()
 ```
 
-Check out the [test file](test.nim) for a better example
+Check out the [test file](test.nim) for a better example.
 
 ## API
 
-Most of Logit methods arguments are optionals and has its defaults values. Check out the exported symbols below.
-
-### `enum LogLevel`
-
-Definition:
-
-  * `enum LogLevel` &ndash; supported logging levels by Logit
-    - `field OTHER` &ndash; log level `OTHER`
-    - `field TRACE` &ndash; log level `TRACE`
-    - `field INFO` &ndash; log level `INFO`
-    - `field DEBUG` &ndash; log level `DEBUG`
-    - `field WARN` &ndash; log level `WARNING`
-    - `field ERROR` &ndash; log level `ERROR`
-    - `field FATAL` &ndash; log level `FATAL`
-
-### `object Logit`
-
-Definition:
-
-  * `object Logit` &ndash; stores some practical data for logs
-    - `field autoExit: bool` &ndash; enable/disable automatically calls `quit` if a log is level `ERROR` or `FATAL`
-    - `field namespace: string` &ndash; the logging namespace
-    - `field filePrefix: TimeFormat` &ndash; the log filename prefix
-    - `field defaultLevel: LogLevel` &ndash; the log level
-    - `field enableConsole: bool` &ndash; enable/disable logging to the console
-
-I recommend to use `initLogit` to create an instance of this unless you're going to set all the fields.
-
-### `proc initLogit -> Logit`
-
-Definition:
-
-  * `proc initLogit -> Logit` &ndash; creates a new `Logit` instance
-    - `param path: string = getTempDir()` &ndash; sets `path`
-    - `param name: string = "Logit"` &ndash; sets `namespace`
-    - `param lvl: LogLevel = OTHER` &ndash; sets `defaultLevel`
-    - `param console: bool = false` &ndash; sets `enableConsole`
-    - `param exit: bool = true` &ndash; sets `autoExit`
-    - `param prefix: TimeFormat = initTimeFormat("YYYY-MM-dd")` &ndash; sets `filePrefix`
-    - `raises IOError` &ndash if `path` isn't valid or doesn't exists
-
-Be careful when setting `path`.
-
-### `proc prepare`
-
-Definition:
-
-  * `proc prepare` &ndash; prepares Logit for logging
-    - `param self: var Logit` &ndash; the `Logit` instance
-    - `raises IOError` &ndash; if can't write/open the log file
-
-Use this proc if you already has a handmade `Logit` instance. This proc basically opens the log file to use it in your "logging session", using the data in the given `Logit` instance. This proc assumes that you already has set the `path` property.
-
-### `template log`
-
-Definition:
-
-  * `template log` &ndash; makes a log
-    - `param self: Logit` &ndash; your `Logit` instance
-    - `param lvl: LogLevel` &ndash; the log level
-    - `param logMsg: string = ""` &ndash; the log message
-    - `param quitMsg: string = ""` &ndash; an optional exit message
-
-`quitMsg` is used as final log message if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
-
-### `template log`
-
-Definition:
-
-  * `template log` &ndash; same as the above, but uses `defaultLevel` as log level
-    - `param self: Logit` &ndash; your `Logit` instance
-    - `param msg: string = ""` &ndash; the log message
-    - `param quitMsg: string = ""` &ndash; an optional exit message
-
-`quitMsg` is used as final log message if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
-
-### `template ()`
-
-Definition:
-
-  * `template ()` &ndash; `callOperator` for `Logit`, internally calls `log`
-    - `param self: Logit` &ndash; your `Logit` instance
-    - `param lvl: LogLevel` &ndash; the log level
-    - `param msg: string = ""` &ndash; the log message
-    - `param quitMsg: string = ""` &ndash; an optional exit message
-
-`quitMsg` is used as final log message if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
-
-### `template ()`
-
-Definition:
-
-  * `template ()` &ndash; `callOperator` for `Logit`, internally calls `log` with `defaultLevel` as log level
-    - `param self: Logit` &ndash; your `Logit` instance
-    - `param msg: string = ""` &ndash; the log message
-    - `param quitMsg: string = ""` &ndash; an optional exit message
-
-`quitMsg` is used as final log message if `autoExit` is enabled and `lvl` is `ERROR` or `FATAL`
-
-### `template expect`
-
-Definition:
-
-  * `template expect` &ndash; calls `log` with level `lvl` if the given "expression" `exp` is `false`
-    - `param self: Logit` &ndash; your `Logit` instance
-    - `param exp: bool` &ndash; the "expression" to evaluate
-    - `param msg: string = ""` &ndash; the log message
-    - `param lvl: LogLevel = ERROR` &ndash; the log level, but defaults to `ERROR`
-    - `param quitMsg: string = ""` &ndash; an optional exit message
-
-This maybe useless if `autoExit` is disabled, since was made mainly for errors.
-
-### `proc header`
-
-Definition:
-
-  * `proc header` &ndash; writes a "header"
-    - `param self: Logit` &ndash; your `Logit` instance
-    - `param msg: string` &ndash; the header message
-
-### `proc done`
-
-Definition:
-
-  * `proc done` &ndash; closes the internal file
-    - `param self: var Logit` &ndash; your `Logit` instance
-
-### `proc path -> string`
-
-Definition:
-
-  * `proc path -> string` &ndash; getter for `path`
-    - `param self: Logit` &ndash; your `Logit` instance
-
-### `proc path=`
-
-Definition:
-
-  * `proc path=` &ndash; setter for `path`
-    - `param self: var Logit` &ndash; your `Logit` instance
-    - `param newPath: string` &ndash; the new path
-    - `raises IOError` &ndash if `newPath` isn't valid or doesn't exists
-
-You should use this once, since the log file is open once and changing the `path` after calling `prepare` will not affect the log file path. Except if you do something like this:
-
-````nim
-import logit
-
-var log = Logit()
-log.path = "/a/path"
-log.prepare()
-
-# ...
-
-log.done()
-
-log.path = "/another/path"
-# i'm not sure if this will work
-log.prepare()
-
-# ...
-
-log.done()
+```nim
+type LogLevel* = enum OTHER, TRACE, INFO, DEBUG, WARN, ERROR, FATAL
 ```
 
-It makes no sense setting `path` between `prepare` and `done`.
+The logging levels, from less to more important.
+
+```nim
+type Logit* = object
+# Private
+  file: File # Internal file used to write logs
+  logsFolder: string # Path where logs are saved
+# Public
+  filePrefix*: TimeFormat # Log file name prefix
+  namespace*: string # Logging namespace
+  exitOnError*: bool # Enable/disable calling `quit` in case of `ERROR` or `FATAL`
+  logToFile*: bool # Enable/disable logging to file
+  logToConsole*: bool # Enable/disable logging to console
+  defaultLogLevel*: LogLevel # Default logging level
+```
+
+The Logit object, which stores some required shared data. __Use `initLogit` instead of creating a new object manually.__
+
+```nim
+proc initLogit*(logsFolder = getTempDir(),
+                namespace = "Logit",
+                defaultLogLevel = OTHER,
+                logToFile = true,
+                logToConsole = false,
+                exitOnError = false,
+                filePrefix = initTimeFormat("YYYY-MM-dd")
+               ): Logit {.raises: [IOError, ValueError].}
+```
+
+Creates a new Logit object. Raises an error if `logsFolder` isn't a valid path or doesn't exists.
+
+```nim
+proc start*(self: var Logit) {.raises: [IOError, ValueError].}
+```
+
+Prepares Logit for logging. Call this proc before start logging and only if you have set `logToFile` to `true` and/or if you have a handmade `Logit` object. Also, if you have a handmade Logit object, don't call this proc if you don't have been set `logsFolder` before.
+
+```nim
+template log*(self: Logit, level: LogLevel, logMessage = $level)
+```
+
+Makes a log. This is the most important template of Logit, you'll use it every time you'll make a log and the following templates are just "shortcuts".
+
+```nim
+template `()`*(self: Logit, level: LogLevel, logMessage = $level) {.inline.}
+```
+
+Custom "call" operator, that allows you to "call" the Logit object as a function and make a log.
+
+```nim
+template log*(self: Logit, logMessage = "") {.inline.}
+```
+Same as the other `log` template, but uses `defaultLogLevel` as log level.
+
+```nim
+template `()`*(self: Logit, logMessage = "") {.inline.}
+```
+
+Same as the other "call" operator, but uses `defaultLogLevel` as log level.
+
+```nim
+template other*(self: Logit, logMessage = "") {.inline.}
+```
+
+Same as `self.log(OTHER, logMessage)`.
+
+```nim
+template trace*(self: Logit, logMessage = "") {.inline.}
+```
+
+Same as `self.log(TRACE, logMessage)`.
+
+```nim
+template info*(self: Logit, logMessage = "") {.inline.}
+```
+
+Same as `self.log(INFO, logMessage)`.
+
+```nim
+template debug*(self: Logit, logMessage = "") {.inline.}
+```
+
+Same as `self.log(DEBUG, logMessage)`.
+
+```nim
+template warn*(self: Logit, logMessage = "") {.inline.}
+```
+
+Same as `self.log(WARN, logMessage)`.
+
+```nim
+template error*(self: Logit, logMessage = "") {.inline.}
+```
+
+Same as `self.log(ERROR, logMessage)`.
+
+```nim
+template fatal*(self: Logit, logMessage = "") {.inline.}
+```
+
+Same as `self.log(FATAL, logMessage)`.
+
+```nim
+proc header*(self: Logit, msg: string)
+```
+
+Makes a "header", which in the context of Logit is just a line separated of the rest of the logs, used for general purpose.
+
+```nim
+proc finish*(self: var Logit) {.inline.}
+```
+
+Ends the logging session. Use this when you'll not use Logit anymore. Same rules as in `start` applies here, since this proc just basically closes the internal file.
+
+```nim
+proc logsFolder*(self: Logit): string {.inline.}
+```
+
+Getter for `logsFolder`.
+
+```nim
+proc `logsFolder=`*(self: var Logit, newLogsFolder: string) {.raises: [IOError, ValueError].}
+```
+
+Setter for `logsFolder`. Raises an error if `newLogsFolder` isn't a valid path or doesn't exists.
