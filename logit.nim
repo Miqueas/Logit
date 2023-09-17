@@ -15,23 +15,18 @@ import std/[
 ]
 
 type
-  LogLevel* = enum
-    OTHER,
-    TRACE,
-    INFO,
-    DEBUG,
-    WARN,
-    ERROR,
-    FATAL
-
+  LogLevel* = enum OTHER, TRACE, INFO, DEBUG, WARN, ERROR, FATAL
   Logit* = object
-    file: File
-    path: string
-    autoExit*: bool
-    namespace*: string
-    filePrefix*: TimeFormat
-    defaultLevel*: LogLevel
-    enableConsole*: bool
+  # Private
+    file: File # Internal file used to write logs
+    logsFolder: string # Path where logs are saved
+  # Public
+    filePrefix*: TimeFormat # Log file name prefix
+    namespace*: string # Logging namespace
+    exitOnError*: bool # Enable/disable calling `quit` in case of `ERROR` or `FATAL`
+    logToFile*: bool # Enable/disable logging to file
+    logToConsole*: bool # Enable/disable logging to console
+    defaultLogLevel*: LogLevel # Default logging level
 
 proc e(n: varargs[int]): string = return '\e' & '[' & join(n, ";") & 'm'
 
@@ -68,115 +63,96 @@ const
     ERROR: 31,
     FATAL: 35,
   })
-#[
-  assoc = [
-    ( name: "OTHER", color: 30 ),
-    ( name: "TRACE", color: 32 ),
-    ( name: "INFO.", color: 34 ),
-    ( name: "DEBUG", color: 36 ),
-    ( name: "WARN.", color: 33 ),
-    ( name: "ERROR", color: 31 ),
-    ( name: "FATAL", color: 35 )
-  ]
-]#
+
+# Creates a new `Logit` object using the given properties
+# or fallback to default values if not arguments
+# given
+proc initLogit*(logsFolder = getTempDir(),
+                namespace = "Logit",
+                defaultLogLevel = OTHER,
+                logToFile = true,
+                logToConsole = false,
+                exitOnError = false,
+                filePrefix = initTimeFormat("YYYY-MM-dd")
+               ): Logit {.raises: [IOError, ValueError].} =
+  if not dirExists(logsFolder):
+    raise newException(IOError, fmt"`{logsFolder}` isn't a valid path or doesn't exists")
+  
+  return Logit(
+    logsFolder: logsFolder,
+    filePrefix: filePrefix,
+    namespace: namespace,
+    exitOnError: exitOnError,
+    logToFile: logToFile,
+    logToConsole: logToConsole,
+    defaultLogLevel: defaultLogLevel
+  )
 
 # Prepares Logit for logging using the given `Logit` instance.
 # This function assumes that `Logit` has everything ready to
 # start logging, that means you must have set the `path` property
-proc prepare*(self: var Logit) {.raises: [IOError, ValueError].} =
-  let
-    dt = now()
-    date = dt.format(self.filePrefix)
-    filename = fmt.fileName.format(date, self.namespace)
+proc start*(self: var Logit) {.raises: [IOError, ValueError].} =
+  if self.logToFile:
+    let
+      date = now().format(self.filePrefix)
+      filename = fmt.fileName.format(date, self.namespace)
 
-  try:
-    self.file = open(self.path / filename, fmAppend)
-  except:
-    raise newException(IOError, fmt"can't open/write file {filename}")
-
-# Creates a new `Logit` instance using the given properties
-# or fallback to default values if not arguments
-# given
-proc initLogit*(path = getTempDir(),
-                name = "Logit",
-                lvl = OTHER,
-                console = false,
-                exit = true,
-                prefix = initTimeFormat("YYYY-MM-dd")
-               ): Logit {.raises: [IOError, ValueError].} =
-  if not dirExists(path):
-    raise newException(IOError, fmt"`{path}` isn't a valid path or doesn't exists")
-  
-  var self = Logit(
-    path: path,
-    autoExit: exit,
-    namespace: name,
-    filePrefix: prefix,
-    defaultLevel: lvl,
-    enableConsole: console
-  )
-
-  self.prepare()
-  return self
+    try:
+      self.file = open(self.logsFolder / filename, fmAppend)
+    except:
+      raise newException(IOError, fmt"can't open/write file {filename}")
 
 # Logging API
-template log*(self: Logit, lvl: LogLevel, logMsg = "", quitMsg = "") =
+template log*(self: Logit, level: LogLevel, logMessage = $level) =
   let
     time = now().format(fmt.time)
-    msg =
-      if logMsg == "": $lvl
-      else: logMsg
     info = instantiationInfo(0)
 
-  self.file.write(fmt.fileLine.format(time, self.namespace, $lvl, info.filename, info.line, msg))
+  if self.logToFile:
+    self.file.write(fmt.fileLine.format(time, self.namespace, $level, info.filename, info.line, logMessage))
 
-  if self.enableConsole:
-    echo fmt.consoleLine.format(time, self.namespace, e(assoc[lvl]), $lvl, info.filename, info.line, msg)
+  if self.logToConsole:
+    echo fmt.consoleLine.format(time, self.namespace, e(assoc[level]), $level, info.filename, info.line, logMessage)
 
-  if ord(lvl) > 4 and self.autoExit:
-    self.file.write(fmt.fileExit.format(time))
-    self.file.close()
+  if self.exitOnError and ord(level) > ord(WARN):
+    if self.logToFile:
+      self.file.write(fmt.fileExit.format(time))
+      self.file.close()
 
-    if self.enableConsole:
-      quit(fmt.consoleExit.format(time, e(assoc[lvl])), 1)
-    else:
-      quit(1)
+    if self.logToConsole:
+      quit(fmt.consoleExit.format(time, e(assoc[level])), QuitFailure)
 
-# Some "shortcuts"
+    quit(QuitFailure)
+
+# Shortcuts
 {.push inline.}
-template log*(self: Logit, msg = "", quitMsg = "") =
-  self.log(self.defaultLevel, msg, quitMsg)
-
-template `()`*(self: Logit, msg = "", quitMsg = "") =
-  self.log(self.defaultLevel, msg, quitMsg)
-
-template `()`*(self: Logit, lvl: LogLevel, msg = "", quitMsg = "") =
-  self.log(lvl, msg, quitMsg)
+template `()`*(self: Logit, level: LogLevel, logMessage = $level) = self.log(level, logMessage)
+template log*(self: Logit, logMessage = "") = self.log(self.defaultLogLevel, logMessage)
+template `()`*(self: Logit, logMessage = "") = self.log(logMessage)
+template other*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
+template trace*(self: Logit, logMessage = "") = self.log(TRACE, logMessage)
+template info*(self: Logit, logMessage = "") = self.log(INFO, logMessage)
+template debug*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
+template warn*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
+template error*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
+template fatal*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
 {.pop.}
-
-# Automatically logs an error if `exp` is `false`. If autoExit is `false` you may don't need/want to use this proc
-template test*(self: Logit, exp: bool, msg = "given expression went wrong", lvl = ERROR): untyped =
-  if not exp: self.log(lvl, msg)
 
 # Writes a "header"
 proc header*(self: Logit, msg: string) =
   let time = now().format(fmt.time)
-  
-  self.file.write(fmt.fileHeader.format(time, msg))
-
-  if self.enableConsole:
-    echo fmt.consoleHeader.format(time, msg)
+  if self.logToFile: self.file.write(fmt.fileHeader.format(time, msg))
+  if self.logToConsole: echo fmt.consoleHeader.format(time, msg)
 
 # Closes the internal file. Call this proc if you're sure you'll not need to use a `Logit` instance anymore
-proc done*(self: var Logit) {.inline.} =
-  self.file.close()
+proc finish*(self: var Logit) {.inline.} = self.file.close()
 
 # Getter for `path`
-proc path*(self: Logit): string {.inline.} =
-  return self.path
+proc logsFolder*(self: Logit): string {.inline.} = return self.logsFolder
 
 # Setter for `path`
-proc `path=`*(self: var Logit, newPath: string) {.raises: [IOError, ValueError].} =
-  if not dirExists(newPath):
-    raise newException(IOError, fmt"`{newPath}` isn't a valid path or doesn't exists")
-  self.path = newPath
+proc `logsFolder=`*(self: var Logit, newLogsFolder: string) {.raises: [IOError, ValueError].} =
+  if not dirExists(newLogsFolder):
+    raise newException(IOError, fmt"`{newLogsFolder}` isn't a valid path or doesn't exists")
+
+  self.logsFolder = newLogsFolder
