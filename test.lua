@@ -1,20 +1,17 @@
-local logit = require("logit")
+local Logit, LogLevel = require("logit")()
 
-local log = logit:new("./", "Test", nil, true, false)
+local log = Logit:new(".", "Test", nil, true, true)
+log:start()
+p(log.file)
 
 log(nil, "hello!")
-log(logit.TRACE, "this seems to be working fine :)")
-log(logit.INFO, "this is an info message")
-log(logit.DEBUG, "this is a debug message")
-log(logit.WARN, "be careful 🔥")
+log(LogLevel.TRACE, "this seems to be working fine :)")
+log(LogLevel.INFO, "this is an info message")
+log(LogLevel.DEBUG, "this is a debug message")
+log(LogLevel.WARN, "be careful 🔥")
 
 log:header("hello there, this is a header :P")
 
--- Checks if 'e' exists
-log:test(5 > 6, "5 > 6 == true")
-log:test(e, "'e' doesn't exists", logit.FATAL)
-log:test()
-
-log(logit.ERROR, "something went wrong!!!")
-log(logit.FATAL, "O H   M Y   G O D N E S S")
-log:done()
+log(LogLevel.ERROR, "something went wrong!!!")
+log(LogLevel.FATAL, "O H   M Y   G O D N E S S")
+log:finish()
