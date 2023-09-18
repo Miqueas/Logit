@@ -103,16 +103,16 @@ proc start*(self: var Logit) {.raises: [IOError, ValueError].} =
       raise newException(IOError, fmt"can't open/write file {filename}")
 
 # Logging API
-template log*(self: Logit, level: LogLevel, logMessage = $level) =
+template log*(self: Logit, level: LogLevel, message = $level) =
   let
     time = now().format(fmt.time)
     info = instantiationInfo(0)
 
   if self.logToFile:
-    self.file.write(fmt.fileLine.format(time, self.namespace, $level, info.filename, info.line, logMessage))
+    self.file.write(fmt.fileLine.format(time, self.namespace, $level, info.filename, info.line, message))
 
   if self.logToConsole:
-    echo fmt.consoleLine.format(time, self.namespace, e(assoc[level]), $level, info.filename, info.line, logMessage)
+    echo fmt.consoleLine.format(time, self.namespace, e(assoc[level]), $level, info.filename, info.line, message)
 
   if self.exitOnError and ord(level) > ord(WARN):
     if self.logToFile:
@@ -126,23 +126,23 @@ template log*(self: Logit, level: LogLevel, logMessage = $level) =
 
 # Shortcuts
 {.push inline.}
-template `()`*(self: Logit, level: LogLevel, logMessage = $level) = self.log(level, logMessage)
-template log*(self: Logit, logMessage = "") = self.log(self.defaultLogLevel, logMessage)
-template `()`*(self: Logit, logMessage = "") = self.log(logMessage)
-template other*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
-template trace*(self: Logit, logMessage = "") = self.log(TRACE, logMessage)
-template info*(self: Logit, logMessage = "") = self.log(INFO, logMessage)
-template debug*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
-template warn*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
-template error*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
-template fatal*(self: Logit, logMessage = "") = self.log(OTHER, logMessage)
+template `()`*(self: Logit, level: LogLevel, message = $level) = self.log(level, message)
+template log*(self: Logit, message = "") = self.log(self.defaultLogLevel, message)
+template `()`*(self: Logit, message = "") = self.log(message)
+template other*(self: Logit, message = "") = self.log(OTHER, message)
+template trace*(self: Logit, message = "") = self.log(TRACE, message)
+template info*(self: Logit, message = "") = self.log(INFO, message)
+template debug*(self: Logit, message = "") = self.log(OTHER, message)
+template warn*(self: Logit, message = "") = self.log(OTHER, message)
+template error*(self: Logit, message = "") = self.log(OTHER, message)
+template fatal*(self: Logit, message = "") = self.log(OTHER, message)
 {.pop.}
 
 # Writes a "header"
-proc header*(self: Logit, msg: string) =
+proc header*(self: Logit, message: string) =
   let time = now().format(fmt.time)
-  if self.logToFile: self.file.write(fmt.fileHeader.format(time, msg))
-  if self.logToConsole: echo fmt.consoleHeader.format(time, msg)
+  if self.logToFile: self.file.write(fmt.fileHeader.format(time, message))
+  if self.logToConsole: echo fmt.consoleHeader.format(time, message)
 
 # Closes the internal file. Call this proc if you're sure you'll not need to use a `Logit` instance anymore
 proc finish*(self: var Logit) {.inline.} = self.file.close()
