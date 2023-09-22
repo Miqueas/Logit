@@ -2,7 +2,6 @@ local Logit, LogLevel = require("logit")()
 
 local log = Logit:new(".", "Test", nil, true, true)
 log:start()
-p(log.file)
 
 log(nil, "hello!")
 log(LogLevel.TRACE, "this seems to be working fine :)")
