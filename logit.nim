@@ -68,7 +68,8 @@ const
 # Creates a new `Logit` object using the given properties
 # or fallback to default values if not arguments
 # given
-proc initLogit*(logsFolder = getTempDir(),
+proc initLogit*(
+   logsFolder = getTempDir(),
    namespace = "Logit",
    defaultLogLevel = OTHER,
    logToFile = true,
