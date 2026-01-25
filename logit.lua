@@ -196,24 +196,26 @@ end
 --- Makes a log
 --- @param level LogLevel The log level
 --- @param message string The message to log
-function Logit:log(level, message, ...)
+function Logit:log(level, message, autoNewLine, ...)
   level = optionalArgument(1, level, "number", self.defaultLogLevel)
   message = optionalArgument(2, message, "string", assoc[level].name):format(...)
+  autoNewLine = optionalArgument(3, autoNewLine, "boolean", true)
 
-  -- This prevents that 'Logit.lua' appears in the log message when
-  -- `expect` is called
-  local info = (debug.getinfo(2, "Sl").short_src:find("(logit.lua)"))
-    and debug.getinfo(3, "Sl")
-    or debug.getinfo(2, "Sl")
-
+  local info = debug.getinfo(2, "Sl")
   local time = os.date(fmt.time)
 
   if self.logToFile then
-    self.file:write(fmt.fileLine:format(time, self.namespace, assoc[level].name, info.short_src, info.currentline, message))
+    local msg = fmt.fileLine:format(time, self.namespace, assoc[level].name, info.short_src, info.currentline, message)
+
+    if autoNewLine then self.file:write(msg)
+    else self.file:write(msg:sub(0, -2)) end
   end
 
   if self.logToConsole then
-    print(fmt.consoleLine:format(time, self.namespace, e(assoc[level].color), assoc[level].name, info.short_src, info.currentline, message))
+    local msg = fmt.consoleLine:format(time, self.namespace, e(assoc[level].color), assoc[level].name, info.short_src, info.currentline, message)
+
+    if autoNewLine then print(msg)
+    else io.write(msg) end
   end
 
   if self.exitOnError and level > LogLevel.WARN then
