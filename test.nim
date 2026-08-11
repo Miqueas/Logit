@@ -1,7 +1,7 @@
 import ./logit
 from std/os import getCurrentDir
 
-var log = initLogit(getCurrentDir(), "TEST", logToConsole = true, exitOnError = false)
+var log = initLogit(getCurrentDir(), "Nim Test", logToConsole = true, exitOnError = false)
 log.start()
 
 # Uses default logging level
