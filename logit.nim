@@ -137,15 +137,33 @@ template log*(self: Logit, level: LogLevel, message = $level, autoNewLine = true
 {.push inline.}
 template `()`*(self: Logit, level: LogLevel, message = $level, autoNewLine = true) =
   self.log(level, message, autoNewLine)
-template log*(self: Logit, message = "", autoNewLine = true) = self.log(self.defaultLogLevel, message, autoNewLine)
-template `()`*(self: Logit, message = "", autoNewLine = true) = self.log(message, autoNewLine)
-template other*(self: Logit, message = "", autoNewLine = true) = self.log(OTHER, message, autoNewLine)
-template trace*(self: Logit, message = "", autoNewLine = true) = self.log(TRACE, message, autoNewLine)
-template info*(self: Logit, message = "", autoNewLine = true) = self.log(INFO, message, autoNewLine)
-template debug*(self: Logit, message = "", autoNewLine = true) = self.log(OTHER, message, autoNewLine)
-template warn*(self: Logit, message = "", autoNewLine = true) = self.log(OTHER, message, autoNewLine)
-template error*(self: Logit, message = "", autoNewLine = true) = self.log(OTHER, message, autoNewLine)
-template fatal*(self: Logit, message = "", autoNewLine = true) = self.log(OTHER, message, autoNewLine)
+
+template log*(self: Logit, message = "", autoNewLine = true) =
+  self.log(self.defaultLogLevel, message, autoNewLine)
+
+template `()`*(self: Logit, message = "", autoNewLine = true) =
+  self.log(message, autoNewLine)
+
+template other*(self: Logit, message = "", autoNewLine = true) =
+  self.log(OTHER, message, autoNewLine)
+
+template trace*(self: Logit, message = "", autoNewLine = true) =
+  self.log(TRACE, message, autoNewLine)
+
+template info*(self: Logit, message = "", autoNewLine = true) =
+  self.log(INFO, message, autoNewLine)
+
+template debug*(self: Logit, message = "", autoNewLine = true) =
+  self.log(DEBUG, message, autoNewLine)
+
+template warn*(self: Logit, message = "", autoNewLine = true) =
+  self.log(WARN, message, autoNewLine)
+
+template error*(self: Logit, message = "", autoNewLine = true) =
+  self.log(ERROR, message, autoNewLine)
+
+template fatal*(self: Logit, message = "", autoNewLine = true) =
+  self.log(FATAL, message, autoNewLine)
 {.pop.}
 
 # Writes a "header"
@@ -158,7 +176,7 @@ proc header*(self: Logit, message: string) =
 proc finish*(self: var Logit) {.inline.} = self.file.close()
 
 # Getter for `path`
-proc logsDir*(self: Logit): string {.inline.} = return self.logsDir
+proc logsDir*(self: Logit): string {.inline.} = self.logsDir
 
 # Setter for `path`
 proc `logsDir=`*(self: var Logit, newLogsDir: string) {.raises: [IOError, ValueError].} =
